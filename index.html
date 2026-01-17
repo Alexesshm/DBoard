@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace Dashboard - Premium Analytics</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="logo">DBOARD <span class="accent">AI</span></div>
+
+        <!-- Period Selector in Nav -->
+        <div class="nav-controls">
+            <div class="period-selector-nav">
+                <button class="period-btn active" onclick="switchPeriod('today')" data-period="today">Сегодня</button>
+                <button class="period-btn" onclick="switchPeriod('yesterday')" data-period="yesterday">Вчера</button>
+                <button class="period-btn" onclick="switchPeriod('days_3')" data-period="days_3">3 дня</button>
+                <button class="period-btn" onclick="switchPeriod('days_7')" data-period="days_7">7 дней</button>
+                <button class="period-btn" onclick="switchPeriod('days_30')" data-period="days_30">30 дней</button>
+            </div>
+
+            <!-- Marketplace Tabs in Nav -->
+            <div class="tabs-nav-compact" id="marketplaceTabs">
+                <button class="mp-btn active" data-mp="wb" onclick="switchMarketplace('wb')">WB</button>
+                <button class="mp-btn" data-mp="ozon" onclick="switchMarketplace('ozon')">Ozon</button>
+            </div>
+        </div>
+
+        <div class="nav-right">
+            <div class="update-info">Обновлено: <span id="last-update">...</span></div>
+            <button class="refresh-btn" onclick="refreshData()" title="Перезагрузить данные">
+                <span class="refresh-icon">🔄</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Refresh Modal -->
+    <div class="refresh-modal" id="refreshModal">
+        <div class="refresh-modal-content">
+            <button class="modal-close" onclick="closeRefreshModal()">×</button>
+            <h3>📊 Обновление данных</h3>
+            <p>Для получения свежих данных с маркетплейсов запустите скрипт:</p>
+            <div class="code-block">
+                <code>python Scripts/run_all.py</code>
+                <button class="copy-btn" onclick="copyCommand()">📋</button>
+            </div>
+            <p class="modal-hint">После выполнения скрипта нажмите кнопку ниже:</p>
+            <button class="modal-reload-btn" onclick="reloadDataAndClose()">🔄 Загрузить обновлённые данные</button>
+        </div>
+    </div>
+
+    <main class="dashboard-container">
+        <header class="header">
+            <h1>Маркетплейс <span class="gradient-text">Дашборд</span></h1>
+        </header>
+
+        <!-- Dynamic Stats for Active Marketplace -->
+        <section class="stats-grid">
+            <div class="stat-card reveal" id="salesCard" onmouseenter="showSalesTooltip(event)"
+                onmouseleave="hideSalesTooltip()">
+                <span class="stat-icon" id="salesIcon">💰</span>
+                <div class="stat-content">
+                    <h3 id="sales-title">Заказы</h3>
+                    <p class="stat-value" id="mp-sales">0 ₽</p>
+                    <span class="stat-label" id="sales-label">за выбранный период</span>
+                </div>
+                <div class="stat-periods" id="sales-periods">
+                    <!-- Other period values will be injected here -->
+                </div>
+            </div>
+            <div class="stat-card reveal" id="redemptionsCard">
+                <span class="stat-icon" id="redemptionsIcon">✅</span>
+                <div class="stat-content">
+                    <h3 id="redemptions-title">Выкупы</h3>
+                    <p class="stat-value" id="mp-redemptions">0 ₽</p>
+                    <span class="stat-label" id="redemptions-label">за выбранный период</span>
+                </div>
+                <div class="stat-periods" id="redemptions-periods">
+                    <!-- Other period values will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Stacked Bar Chart Section -->
+        <section class="chart-section reveal">
+            <h2 id="chartTitle">📊 Остатки по складам и товарам</h2>
+            <p class="section-subtitle" id="chartSubtitle">Каждый столбец — склад, цвета — товары (артикулы)</p>
+            <div class="chart-container">
+                <canvas id="stocksChart"></canvas>
+            </div>
+            <div class="chart-legend" id="chartLegend"></div>
+            <div class="stocks-summary" id="stocksSummary"></div>
+        </section>
+
+        <!-- Sales by Product Section -->
+        <section class="products-section reveal">
+            <h2 id="products-section-title">🔥 Продажи по товарам</h2>
+            <div class="products-grid" id="productsGrid">
+                <!-- Cards will be injected here -->
+            </div>
+        </section>
+
+        <!-- Detailed Tables Section -->
+        <section class="detail-section reveal">
+            <div class="detail-header">
+                <h2 id="detailTitle">Детальная аналитика Wildberries</h2>
+                <div class="detail-tabs">
+                    <button class="detail-tab-btn active" data-tab="stocks" onclick="switchDetailTab('stocks')">
+                        📦 Остатки
+                    </button>
+                    <button class="detail-tab-btn" data-tab="orders" onclick="switchDetailTab('orders')">
+                        🚚 Отгрузки
+                    </button>
+                    <button class="detail-tab-btn" data-tab="regions" onclick="switchDetailTab('regions')">
+                        🗺️ Регионы
+                    </button>
+                </div>
+            </div>
+            <div class="detail-table-container" id="detailTableContainer">
+                <!-- Table will be injected here -->
+            </div>
+        </section>
+
+        <!-- Stock Monitoring Section -->
+        <section class="stock-monitoring-section reveal">
+            <div class="monitoring-header">
+                <h2>📦 Мониторинг укомплектованности</h2>
+                <div class="monitoring-filters">
+                    <select id="monitoringStatusFilter" onchange="updateStockMonitoring()">
+                        <option value="all">Все статусы</option>
+                        <option value="critical">🔴 Критично</option>
+                        <option value="warning">🟠 Внимание</option>
+                        <option value="normal">🟢 Норма</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Critical Alerts -->
+            <div class="monitoring-alerts" id="monitoringAlerts">
+                <!-- Critical items will be injected here -->
+            </div>
+
+            <!-- Stock Monitoring Table -->
+            <div class="monitoring-table-container">
+                <table class="monitoring-table" id="monitoringTable">
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th onclick="sortMonitoringTable('stock')">Остаток ↕</th>
+                            <th>Сегодня</th>
+                            <th>Вчера</th>
+                            <th>3 дня</th>
+                            <th>7 дней</th>
+                            <th onclick="sortMonitoringTable('avg7d')">30д% | Расход 7д | 3д%</th>
+                            <th onclick="sortMonitoringTable('daysLeft')">Дней осталось ↕</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monitoringTableBody">
+                        <!-- Rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
