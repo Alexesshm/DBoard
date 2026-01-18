@@ -57,4 +57,5 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add dashboard_data.json
           git commit -m "📊 Auto-update dashboard data [$(date +'%Y-%m-%d %H:%M')]"
+          git pull --rebase origin main
           git push
