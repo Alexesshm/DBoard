@@ -2291,7 +2291,6 @@ body {
 
 /* Orders Table Tooltip */
 .orders-row-with-tooltip {
-    position: relative;
     cursor: pointer;
     transition: background 0.2s ease;
 }
@@ -2300,18 +2299,22 @@ body {
     background: rgba(139, 92, 246, 0.1);
 }
 
+.orders-cell-with-tooltip {
+    position: relative;
+}
+
 .orders-tooltip {
     display: none;
     position: absolute;
     top: 100%;
-    left: 50px;
+    left: 0;
     z-index: 9999;
     min-width: 200px;
     max-width: 280px;
     padding-top: 5px;
 }
 
-.orders-row-with-tooltip:hover .orders-tooltip {
+.orders-cell-with-tooltip:hover .orders-tooltip {
     display: block;
 }
 
