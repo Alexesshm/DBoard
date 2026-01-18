@@ -291,14 +291,24 @@ function updateDetailTable() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${sales.map((s, i) => `
-                        <tr>
+                    ${sales.map((s, i) => {
+            const products = s.by_product || [];
+            const tooltipContent = products.length > 0
+                ? products.map(p => `<div class="wh-tooltip-row"><span>${p.article}</span><span>${p.count} шт.</span></div>`).join('')
+                : '<div class="wh-tooltip-empty">Нет данных о товарах</div>';
+            return `
+                        <tr class="orders-row-with-tooltip" data-warehouse="${s.name}">
                             <td class="table-rank">${i + 1}</td>
                             <td><span class="table-value-main">${s.name}</span></td>
                             <td style="text-align: right;"><span class="table-value-main">${s.count}</span><span class="table-value-sub">шт.</span></td>
                             <td style="text-align: right;" class="table-positive">${formatCurrency(s.revenue)}</td>
+                            <div class="orders-tooltip">
+                                <div class="orders-tooltip-title">Товары со склада ${s.name}:</div>
+                                <div class="orders-tooltip-content">${tooltipContent}</div>
+                            </div>
                         </tr>
-                    `).join('')}
+                    `;
+        }).join('')}
                 </tbody>
             </table>
         `;

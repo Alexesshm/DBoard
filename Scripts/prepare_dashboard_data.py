@@ -311,11 +311,18 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
 
         total_revenue += price
         
-        # Warehouse aggregation
+        # Warehouse aggregation (with product breakdown)
         if wh_name not in by_warehouse:
-            by_warehouse[wh_name] = {'name': wh_name, 'count': 0, 'revenue': 0}
+            by_warehouse[wh_name] = {'name': wh_name, 'count': 0, 'revenue': 0, 'by_product': {}}
         by_warehouse[wh_name]['count'] += 1
         by_warehouse[wh_name]['revenue'] += price
+        
+        # Add product to warehouse breakdown (for WB)
+        if mp_type == 'wb':
+            if article not in by_warehouse[wh_name]['by_product']:
+                by_warehouse[wh_name]['by_product'][article] = {'article': article, 'count': 0, 'revenue': 0}
+            by_warehouse[wh_name]['by_product'][article]['count'] += 1
+            by_warehouse[wh_name]['by_product'][article]['revenue'] += price
         
         # Region aggregation
         if region not in by_region:
@@ -358,6 +365,10 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
 
     # Convert dicts to sorted lists
     sorted_warehouses = sorted(by_warehouse.values(), key=lambda x: x['revenue'], reverse=True)[:15]
+    # Flatten product breakdown inside each warehouse
+    for wh in sorted_warehouses:
+        wh['by_product'] = sorted(wh.get('by_product', {}).values(), key=lambda x: x['count'], reverse=True)
+    
     sorted_regions = sorted(by_region.values(), key=lambda x: x['revenue'], reverse=True)[:15]
     
     sorted_products = sorted(by_product.values(), key=lambda x: x['revenue'], reverse=True)
