@@ -622,9 +622,21 @@ function createClusteredHorizontalChart(chartData, mpType) {
     });
 
     // Group warehouses by cluster
+    // Warehouses with total stock = 1 go to 'Прочие' regardless of cluster
     const clusteredData = {};
     warehouses.forEach(wh => {
-        const clusterName = getWarehouseCluster(wh, mpType === 'wb' ? 'wb' : 'ozon');
+        const whData = warehouseData[wh];
+        let whTotal = 0;
+        Object.values(whData).forEach(p => whTotal += p.qty);
+
+        // Determine cluster: warehouses with 1 item total go to 'Прочие'
+        let clusterName;
+        if (whTotal === 1) {
+            clusterName = 'Прочие';
+        } else {
+            clusterName = getWarehouseCluster(wh, mpType === 'wb' ? 'wb' : 'ozon');
+        }
+
         if (!clusteredData[clusterName]) {
             clusteredData[clusterName] = {
                 name: clusterName,
@@ -632,9 +644,6 @@ function createClusteredHorizontalChart(chartData, mpType) {
                 totalStock: 0
             };
         }
-        const whData = warehouseData[wh];
-        let whTotal = 0;
-        Object.values(whData).forEach(p => whTotal += p.qty);
 
         clusteredData[clusterName].warehouses.push({
             name: wh,
@@ -1791,6 +1800,8 @@ const OZON_CLUSTERS = {
 
 /**
  * Get cluster name for a warehouse
+ * Returns 'Прочие' only for warehouses containing 'СЦ' in name
+ * Returns 'Нераспознанные' for other unmatched warehouses
  */
 function getWarehouseCluster(warehouseName, mpType) {
     const name = warehouseName.toLowerCase();
@@ -1803,7 +1814,13 @@ function getWarehouseCluster(warehouseName, mpType) {
             }
         }
     }
-    return 'Прочие';
+
+    // Check if it's a sorting center (СЦ)
+    if (name.includes('сц') || warehouseName.includes('СЦ')) {
+        return 'Прочие';
+    }
+
+    return 'Нераспознанные';
 }
 
 /**
