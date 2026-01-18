@@ -90,8 +90,39 @@ function showError(message) {
  * Update UI with fetched data
  */
 function updateUI(data) {
-    // Update header info
-    document.getElementById('last-update').textContent = data.last_update || 'неизвестно';
+    // Update header info with user's timezone
+    const lastUpdateEl = document.getElementById('last-update');
+    const nextUpdateEl = document.getElementById('next-update');
+
+    if (data.last_update) {
+        // Parse the date and format in user's timezone
+        const lastUpdateDate = new Date(data.last_update.replace(/(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})/, '$3-$2-$1T$4:$5:00'));
+
+        if (!isNaN(lastUpdateDate.getTime())) {
+            // Format in user's local time
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+            lastUpdateEl.textContent = lastUpdateDate.toLocaleString('ru-RU', options);
+
+            // Calculate next update (every 2 hours on the hour)
+            const now = new Date();
+            const nextUpdate = new Date(lastUpdateDate);
+            nextUpdate.setMinutes(0, 0, 0); // Round to hour
+            nextUpdate.setHours(nextUpdate.getHours() + 2); // Add 2 hours
+
+            // If next update is in the past, calculate from now
+            while (nextUpdate <= now) {
+                nextUpdate.setHours(nextUpdate.getHours() + 2);
+            }
+
+            nextUpdateEl.textContent = nextUpdate.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            lastUpdateEl.textContent = data.last_update;
+            nextUpdateEl.textContent = '~2ч';
+        }
+    } else {
+        lastUpdateEl.textContent = 'неизвестно';
+        nextUpdateEl.textContent = '—';
+    }
 
     // Update marketplace-specific UI (Sales, Stocks, Chart, Product Grid)
     updateMarketplaceUI();

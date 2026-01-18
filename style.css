@@ -2241,3 +2241,50 @@ body {
 .chart-empty-text {
     font-size: 1rem;
 }
+
+/* Update Info Block */
+.update-info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.update-last,
+.update-next {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+}
+
+.update-label {
+    color: var(--text-muted);
+}
+
+.update-time {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.update-last .update-time {
+    color: #22c55e;
+}
+
+.update-next .update-time {
+    color: var(--accent-blue);
+}
+
+@media (max-width: 768px) {
+    .update-info-block {
+        padding: 6px 10px;
+    }
+
+    .update-last,
+    .update-next {
+        font-size: 0.65rem;
+    }
+}

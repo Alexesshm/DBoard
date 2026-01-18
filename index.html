@@ -31,27 +31,19 @@
         </div>
 
         <div class="nav-right">
-            <div class="update-info">Обновлено: <span id="last-update">...</span></div>
-            <button class="refresh-btn" onclick="refreshData()" title="Перезагрузить данные">
-                <span class="refresh-icon">🔄</span>
-            </button>
+            <div class="update-info-block" id="updateInfoBlock">
+                <div class="update-last">
+                    <span class="update-label">Обновлено:</span>
+                    <span class="update-time" id="last-update">...</span>
+                </div>
+                <div class="update-next">
+                    <span class="update-label">Следующее:</span>
+                    <span class="update-time" id="next-update">...</span>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <!-- Refresh Modal -->
-    <div class="refresh-modal" id="refreshModal">
-        <div class="refresh-modal-content">
-            <button class="modal-close" onclick="closeRefreshModal()">×</button>
-            <h3>📊 Обновление данных</h3>
-            <p>Для получения свежих данных с маркетплейсов запустите скрипт:</p>
-            <div class="code-block">
-                <code>python Scripts/run_all.py</code>
-                <button class="copy-btn" onclick="copyCommand()">📋</button>
-            </div>
-            <p class="modal-hint">После выполнения скрипта нажмите кнопку ниже:</p>
-            <button class="modal-reload-btn" onclick="reloadDataAndClose()">🔄 Загрузить обновлённые данные</button>
-        </div>
-    </div>
 
     <main class="dashboard-container">
         <header class="header">
