@@ -231,7 +231,7 @@ def calculate_total_stocks_by_product(raw_stocks):
     
     for item in raw_stocks:
         article = item.get('supplierArticle', 'Unknown')
-        qty = item.get('quantityFull', 0)
+        qty = item.get('quantity', 0)  # Остатки, доступные для заказа
         warehouse = item.get('warehouseName', 'Unknown')
         
         if article not in products:

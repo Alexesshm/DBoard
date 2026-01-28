@@ -90,7 +90,7 @@ def aggregate_stocks_by_warehouse(stocks):
     warehouses = {}
     for item in stocks:
         wh_name = item.get('warehouseName', 'Unknown')
-        qty = item.get('quantityFull', 0)
+        qty = item.get('quantity', 0)  # Остатки, доступные для заказа
         
         if wh_name not in warehouses:
             warehouses[wh_name] = {
@@ -116,7 +116,7 @@ def aggregate_stocks_by_warehouse_and_product(stocks):
     for item in stocks:
         wh_name = item.get('warehouseName', 'Unknown')
         article = item.get('supplierArticle', 'Unknown')
-        qty = item.get('quantityFull', 0)
+        qty = item.get('quantity', 0)  # Остатки, доступные для заказа
         
         if qty == 0:
             continue  # Skip zero stocks
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     
     # Aggregate stocks by warehouse
     stocks_by_warehouse = aggregate_stocks_by_warehouse(stocks)
-    total_stock = sum(s.get('quantityFull', 0) for s in stocks)
+    total_stock = sum(s.get('quantity', 0) for s in stocks)  # Остатки, доступные для заказа
     
     # Aggregate stocks by warehouse with product breakdown (for chart)
     stocks_warehouse_products, all_articles = aggregate_stocks_by_warehouse_and_product(stocks)
