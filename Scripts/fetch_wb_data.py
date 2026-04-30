@@ -25,7 +25,7 @@ WB_TOKEN = os.getenv('WB_API_TOKEN')
 
 # Rate limit settings
 MAX_RETRIES = 3
-BASE_DELAY = 65  # WB statistics API allows 1 request per minute per endpoint
+RETRY_DELAY = 62  # WB statistics API: 1 request per minute per token
 INTER_REQUEST_DELAY = 62  # Delay between different API calls (seconds)
 
 
@@ -44,7 +44,7 @@ def fetch_with_retry(url, params, headers, endpoint_name, max_retries=MAX_RETRIE
                 if retry_after:
                     wait_time = int(retry_after) + 5  # Add buffer
                 else:
-                    wait_time = BASE_DELAY * (2 ** attempt)  # Exponential backoff
+                    wait_time = RETRY_DELAY  # Flat retry (no exponential)
                 
                 print(f"Rate limited ({endpoint_name}), attempt {attempt + 1}/{max_retries}. "
                       f"Waiting {wait_time}s...")
