@@ -24,9 +24,9 @@ load_dotenv(CREDENTIALS_PATH)
 WB_TOKEN = os.getenv('WB_API_TOKEN')
 
 # Rate limit settings
-MAX_RETRIES = 3
-RETRY_DELAY = 62  # WB statistics API: 1 request per minute per token
-INTER_REQUEST_DELAY = 62  # Delay between different API calls (seconds)
+MAX_RETRIES = 2
+RETRY_DELAY = 65  # WB statistics API: 1 request per minute per token
+INTER_REQUEST_DELAY = 65  # Delay between different API calls (seconds)
 
 
 def fetch_with_retry(url, params, headers, endpoint_name, max_retries=MAX_RETRIES):
