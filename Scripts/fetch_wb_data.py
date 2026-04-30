@@ -1,10 +1,12 @@
 """
 Fetch Wildberries sales and stock data via API.
 Includes warehouse breakdown with product details (supplierArticle).
+Handles WB API rate limits (HTTP 429) with retry + exponential backoff.
 """
 
 import requests
 import os
+import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import json
@@ -21,26 +23,62 @@ os.makedirs(EXECUTIONS_DIR, exist_ok=True)
 load_dotenv(CREDENTIALS_PATH)
 WB_TOKEN = os.getenv('WB_API_TOKEN')
 
+# Rate limit settings
+MAX_RETRIES = 3
+BASE_DELAY = 65  # WB statistics API allows 1 request per minute per endpoint
+INTER_REQUEST_DELAY = 62  # Delay between different API calls (seconds)
+
+
+def fetch_with_retry(url, params, headers, endpoint_name, max_retries=MAX_RETRIES):
+    """
+    Fetch data from WB API with retry on HTTP 429 (rate limit).
+    Uses Retry-After header if available, otherwise exponential backoff.
+    """
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, params=params, headers=headers, timeout=60)
+            
+            if response.status_code == 429:
+                # Rate limited — calculate wait time
+                retry_after = response.headers.get('Retry-After')
+                if retry_after:
+                    wait_time = int(retry_after) + 5  # Add buffer
+                else:
+                    wait_time = BASE_DELAY * (2 ** attempt)  # Exponential backoff
+                
+                print(f"Rate limited ({endpoint_name}), attempt {attempt + 1}/{max_retries}. "
+                      f"Waiting {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            
+            response.raise_for_status()
+            data = response.json()
+            print(f"  ✓ {endpoint_name}: {len(data) if isinstance(data, list) else 'OK'} items")
+            return data
+            
+        except requests.exceptions.Timeout:
+            print(f"Error: WB API timeout ({endpoint_name}), attempt {attempt + 1}/{max_retries}")
+            if attempt < max_retries - 1:
+                time.sleep(30)
+                continue
+            return []
+        except requests.exceptions.HTTPError as e:
+            print(f"Error fetching WB {endpoint_name}: HTTP {e.response.status_code}")
+            return []
+        except Exception as e:
+            print(f"Error fetching WB {endpoint_name}: {e}")
+            return []
+    
+    print(f"All {max_retries} retries exhausted for {endpoint_name}")
+    return []
+
 
 def fetch_wb_stocks():
     """Fetch current stock levels from Wildberries with warehouse breakdown."""
     url = "https://statistics-api.wildberries.ru/api/v1/supplier/stocks"
     params = {"dateFrom": (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')}
     headers = {"Authorization": WB_TOKEN}
-    
-    try:
-        response = requests.get(url, params=params, headers=headers, timeout=30)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.Timeout:
-        print("Error: WB API timeout (stocks)")
-        return []
-    except requests.exceptions.HTTPError as e:
-        print(f"Error fetching WB stocks: HTTP {e.response.status_code}")
-        return []
-    except Exception as e:
-        print(f"Error fetching WB stocks: {e}")
-        return []
+    return fetch_with_retry(url, params, headers, "stocks")
 
 
 def fetch_wb_orders():
@@ -48,20 +86,7 @@ def fetch_wb_orders():
     url = "https://statistics-api.wildberries.ru/api/v1/supplier/orders"
     params = {"dateFrom": (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')}
     headers = {"Authorization": WB_TOKEN}
-    
-    try:
-        response = requests.get(url, params=params, headers=headers, timeout=30)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.Timeout:
-        print("Error: WB API timeout (orders)")
-        return []
-    except requests.exceptions.HTTPError as e:
-        print(f"Error fetching WB orders: HTTP {e.response.status_code}")
-        return []
-    except Exception as e:
-        print(f"Error fetching WB orders: {e}")
-        return []
+    return fetch_with_retry(url, params, headers, "orders")
 
 
 def fetch_wb_sales():
@@ -69,20 +94,7 @@ def fetch_wb_sales():
     url = "https://statistics-api.wildberries.ru/api/v1/supplier/sales"
     params = {"dateFrom": (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')}
     headers = {"Authorization": WB_TOKEN}
-    
-    try:
-        response = requests.get(url, params=params, headers=headers, timeout=30)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.Timeout:
-        print("Error: WB API timeout (sales)")
-        return []
-    except requests.exceptions.HTTPError as e:
-        print(f"Error fetching WB sales: HTTP {e.response.status_code}")
-        return []
-    except Exception as e:
-        print(f"Error fetching WB sales: {e}")
-        return []
+    return fetch_with_retry(url, params, headers, "sales")
 
 
 def aggregate_stocks_by_warehouse(stocks):
@@ -212,10 +224,20 @@ def aggregate_orders_by_product(orders):
 
 if __name__ == "__main__":
     print("Fetching Wildberries data...")
+    print(f"  (using {INTER_REQUEST_DELAY}s delay between API calls to respect rate limits)")
     
     stocks = fetch_wb_stocks()
+    
+    print(f"  Waiting {INTER_REQUEST_DELAY}s before next request...")
+    time.sleep(INTER_REQUEST_DELAY)
+    
     orders = fetch_wb_orders()  # Orders (what WB dashboard shows)
+    
+    print(f"  Waiting {INTER_REQUEST_DELAY}s before next request...")
+    time.sleep(INTER_REQUEST_DELAY)
+    
     sales = fetch_wb_sales()    # Sales/redemptions (for reference)
+
     
     # Aggregate stocks by warehouse
     stocks_by_warehouse = aggregate_stocks_by_warehouse(stocks)
