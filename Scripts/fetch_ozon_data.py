@@ -63,16 +63,24 @@ def fetch_ozon_stocks():
 
 
 def fetch_ozon_warehouses():
-    """Fetch list of Ozon warehouses."""
-    url = "https://api-seller.ozon.ru/v1/warehouse/list"
+    """Fetch list of Ozon warehouses. Tries v1, falls back to v2."""
+    for version, url in [
+        ('v1', 'https://api-seller.ozon.ru/v1/warehouse/list'),
+        ('v2', 'https://api-seller.ozon.ru/v2/warehouse/list'),
+    ]:
+        try:
+            response = requests.post(url, json={}, headers=HEADERS, timeout=30)
+            response.raise_for_status()
+            result = response.json().get('result', [])
+            print(f"  ✓ warehouses ({version}): {len(result)} items")
+            return result
+        except requests.exceptions.HTTPError as e:
+            print(f"  Warehouses {version} failed: HTTP {e.response.status_code} - {e.response.text[:200]}")
+        except Exception as e:
+            print(f"  Warehouses {version} failed: {e}")
     
-    try:
-        response = requests.post(url, json={}, headers=HEADERS, timeout=30)
-        response.raise_for_status()
-        return response.json().get('result', [])
-    except Exception as e:
-        print(f"Error fetching Ozon warehouses: {e}")
-        return []
+    print("  ⚠ All warehouse endpoints failed, continuing without warehouse mapping")
+    return []
 
 
 def fetch_ozon_fbo_stocks():
@@ -93,44 +101,62 @@ def fetch_ozon_fbo_stocks():
 
 
 def fetch_ozon_orders():
-    """Fetch FBO orders for the last 1 day with region info.
+    """Fetch FBO orders for the last 30 days with region info.
     
     NOTE: Using v2 endpoint as per OZON documentation.
     v3 was returning 404 - it's for FBS only.
+    Implements pagination to get all orders beyond the 1000 limit.
     """
     url = "https://api-seller.ozon.ru/v2/posting/fbo/list"
     dt_now = datetime.now()
-    dt_from = dt_now - timedelta(days=30)  # 30 days back for proper redemptions tracking
+    dt_from = dt_now - timedelta(days=30)
     
-    payload = {
-        "dir": "DESC",
-        "filter": {
-            "since": dt_from.strftime('%Y-%m-%dT00:00:00.000Z'),
-            "to": dt_now.strftime('%Y-%m-%dT23:59:59.999Z'),
-            "status": ""
-        },
-        "limit": 1000,
-        "offset": 0,
-        "with": {
-            "analytics_data": True,
-            "financial_data": True
+    all_orders = []
+    offset = 0
+    
+    while True:
+        payload = {
+            "dir": "DESC",
+            "filter": {
+                "since": dt_from.strftime('%Y-%m-%dT00:00:00.000Z'),
+                "to": dt_now.strftime('%Y-%m-%dT23:59:59.999Z'),
+                "status": ""
+            },
+            "limit": 1000,
+            "offset": offset,
+            "with": {
+                "analytics_data": True,
+                "financial_data": True
+            }
         }
-    }
+        
+        try:
+            response = requests.post(url, json=payload, headers=HEADERS, timeout=30)
+            response.raise_for_status()
+            result = response.json().get('result', [])
+            if isinstance(result, dict):
+                result = result.get('postings', [])
+            
+            if not result:
+                break
+            
+            all_orders.extend(result)
+            print(f"  ✓ orders page {offset // 1000 + 1}: {len(result)} items (total: {len(all_orders)})")
+            
+            if len(result) < 1000:
+                break  # Last page
+            
+            offset += 1000
+            
+        except requests.exceptions.HTTPError as e:
+            print(f"Error fetching Ozon orders: HTTP {e.response.status_code} - {e.response.text[:200]}")
+            break
+        except Exception as e:
+            print(f"Error fetching Ozon orders: {e}")
+            break
     
-    try:
-        response = requests.post(url, json=payload, headers=HEADERS, timeout=30)
-        response.raise_for_status()
-        # v2 returns result as list directly, not {result: {postings: [...]}}
-        result = response.json().get('result', [])
-        if isinstance(result, list):
-            return result
-        return result.get('postings', [])
-    except requests.exceptions.HTTPError as e:
-        print(f"Error fetching Ozon orders: HTTP {e.response.status_code}")
-        return []
-    except Exception as e:
-        print(f"Error fetching Ozon orders: {e}")
-        return []
+    print(f"  ✓ orders total: {len(all_orders)} orders")
+    return all_orders
 
 
 def fetch_ozon_sales_analytics():
@@ -212,14 +238,37 @@ def fetch_ozon_finance_transactions():
             
         except requests.exceptions.HTTPError as e:
             print(f"Error fetching Ozon finance transactions: HTTP {e.response.status_code}")
+            try:
+                print(f"  Response body: {e.response.text[:500]}")
+            except Exception:
+                pass
             break
         except Exception as e:
             print(f"Error fetching Ozon finance transactions: {e}")
             break
     
+    # Diagnostic: log all unique operation_types
+    if all_transactions:
+        all_types = set(t.get('operation_type', 'NONE') for t in all_transactions)
+        print(f"  Finance operation_types found ({len(all_types)}): {all_types}")
+    else:
+        print(f"  ⚠ No finance transactions retrieved (API may have returned error)")
+    
     # Filter for delivered transactions (redemptions)
+    # Try multiple known operation_type values
+    delivery_types = {
+        'OperationAgentDeliveredToCustomer',
+        'MarketplaceRedistributionOfAcquiringOperation',
+    }
     redemptions = [t for t in all_transactions 
-                   if t.get('operation_type') == 'OperationAgentDeliveredToCustomer']
+                   if t.get('operation_type') in delivery_types]
+    
+    # If no matches with known types, try matching by type='orders' and positive accruals
+    if not redemptions and all_transactions:
+        print(f"  ⚠ No redemptions matched by operation_type, trying fallback filter")
+        redemptions = [t for t in all_transactions 
+                       if t.get('type') == 'orders' and t.get('accruals_for_sale', 0) > 0]
+        print(f"  Fallback found {len(redemptions)} redemptions by type='orders'")
     
     return redemptions, all_transactions
 
