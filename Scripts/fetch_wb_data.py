@@ -24,9 +24,9 @@ load_dotenv(CREDENTIALS_PATH)
 WB_TOKEN = os.getenv('WB_API_TOKEN')
 
 # Rate limit settings
-MAX_RETRIES = 2
-RETRY_DELAY = 65  # WB statistics API: 1 request per minute per token
-INTER_REQUEST_DELAY = 65  # Delay between different API calls (seconds)
+MAX_RETRIES = 5
+RETRY_DELAY = 90  # WB statistics API: 1 request per minute per token (with safety margin)
+INTER_REQUEST_DELAY = 90  # Delay between different API calls (seconds)
 
 
 def fetch_with_retry(url, params, headers, endpoint_name, max_retries=MAX_RETRIES):
@@ -37,20 +37,24 @@ def fetch_with_retry(url, params, headers, endpoint_name, max_retries=MAX_RETRIE
     for attempt in range(max_retries):
         try:
             response = requests.get(url, params=params, headers=headers, timeout=60)
-            
+
+            # Diagnostic logging
+            print(f"  [{endpoint_name}] HTTP {response.status_code}, "
+                  f"Content-Length: {len(response.content)} bytes")
+
             if response.status_code == 429:
                 # Rate limited — calculate wait time
                 retry_after = response.headers.get('Retry-After')
                 if retry_after:
-                    wait_time = int(retry_after) + 5  # Add buffer
+                    wait_time = int(retry_after) + 10  # Add buffer
                 else:
-                    wait_time = RETRY_DELAY  # Flat retry (no exponential)
-                
-                print(f"Rate limited ({endpoint_name}), attempt {attempt + 1}/{max_retries}. "
+                    wait_time = RETRY_DELAY
+
+                print(f"  Rate limited ({endpoint_name}), attempt {attempt + 1}/{max_retries}. "
                       f"Waiting {wait_time}s...")
                 time.sleep(wait_time)
                 continue
-            
+
             response.raise_for_status()
             data = response.json()
             print(f"  ✓ {endpoint_name}: {len(data) if isinstance(data, list) else 'OK'} items")
