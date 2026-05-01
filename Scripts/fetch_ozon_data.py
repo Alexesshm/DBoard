@@ -109,7 +109,7 @@ def fetch_ozon_orders():
     """
     url = "https://api-seller.ozon.ru/v2/posting/fbo/list"
     dt_now = datetime.now()
-    dt_from = dt_now - timedelta(days=30)
+    dt_from = dt_now - timedelta(days=28)
     
     all_orders = []
     offset = 0
@@ -198,7 +198,7 @@ def fetch_ozon_finance_transactions():
     """
     url = "https://api-seller.ozon.ru/v3/finance/transaction/list"
     dt_now = datetime.now()
-    dt_from = dt_now - timedelta(days=30)
+    dt_from = dt_now - timedelta(days=28)
     
     all_transactions = []
     page = 1
