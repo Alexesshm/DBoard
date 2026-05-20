@@ -1,10 +1,10 @@
 {
-    "last_update": "19.05.2026 23:04",
+    "last_update": "20.05.2026 03:31",
     "summary": {
         "wb_stocks": 1298,
-        "ozon_stocks": 1044,
-        "total_stocks": 2342,
-        "total_sales_today": 111129
+        "ozon_stocks": 1609,
+        "total_stocks": 2907,
+        "total_sales_today": 1986
     },
     "marketplaces": [
         {
@@ -362,8 +362,14 @@
                 {
                     "name": "ГРИВНО_РФЦ",
                     "warehouse_id": "ГРИВНО_РФЦ",
-                    "quantity": 662,
+                    "quantity": 661,
                     "items_count": 5
+                },
+                {
+                    "name": "НОВОРОССИЙСК_РФЦ",
+                    "warehouse_id": "НОВОРОССИЙСК_РФЦ",
+                    "quantity": 566,
+                    "items_count": 3
                 },
                 {
                     "name": "Екатеринбург_РФЦ_НОВЫЙ",
@@ -399,14 +405,14 @@
             "by_product": [
                 {
                     "article": "SF0125",
-                    "quantity": 553,
-                    "warehouses_count": 3,
+                    "quantity": 873,
+                    "warehouses_count": 4,
                     "color": "#614701"
                 },
                 {
                     "article": "SF0250",
-                    "quantity": 322,
-                    "warehouses_count": 3,
+                    "quantity": 561,
+                    "warehouses_count": 4,
                     "color": "#80651b"
                 },
                 {
@@ -423,8 +429,8 @@
                 },
                 {
                     "article": "SF2500",
-                    "quantity": 18,
-                    "warehouses_count": 2,
+                    "quantity": 24,
+                    "warehouses_count": 3,
                     "color": "#b38c24"
                 }
             ],
@@ -432,6 +438,7 @@
                 "labels": [
                     "ГРИВНО_РФЦ",
                     "НОГИНСК_РФЦ",
+                    "НОВОРОССИЙСК_РФЦ",
                     "АДЫГЕЙСК_РФЦ",
                     "Екатеринбург_РФЦ_НОВЫЙ",
                     "Новосибирск_РФЦ_НОВЫЙ",
@@ -443,6 +450,7 @@
                         "data": [
                             311,
                             0,
+                            320,
                             0,
                             241,
                             1,
@@ -455,8 +463,9 @@
                     {
                         "label": "SF0250",
                         "data": [
-                            242,
+                            241,
                             0,
+                            240,
                             0,
                             79,
                             0,
@@ -471,6 +480,7 @@
                         "data": [
                             53,
                             1,
+                            0,
                             29,
                             20,
                             4,
@@ -485,6 +495,7 @@
                         "data": [
                             12,
                             0,
+                            6,
                             0,
                             6,
                             0,
@@ -502,6 +513,7 @@
                             0,
                             0,
                             0,
+                            0,
                             0
                         ],
                         "backgroundColor": "#80651b",
@@ -514,36 +526,36 @@
                         "name": "Москва, МО и Дальние регионы",
                         "start_index": 0,
                         "warehouse_count": 2,
-                        "total_stock": 663,
+                        "total_stock": 662,
                         "end_index": 1
                     },
                     {
                         "name": "Краснодар",
                         "start_index": 2,
-                        "warehouse_count": 1,
-                        "total_stock": 29,
-                        "end_index": 2
-                    },
-                    {
-                        "name": "Екатеринбург",
-                        "start_index": 3,
-                        "warehouse_count": 1,
-                        "total_stock": 346,
+                        "warehouse_count": 2,
+                        "total_stock": 595,
                         "end_index": 3
                     },
                     {
-                        "name": "Новосибирск",
+                        "name": "Екатеринбург",
                         "start_index": 4,
                         "warehouse_count": 1,
-                        "total_stock": 5,
+                        "total_stock": 346,
                         "end_index": 4
                     },
                     {
-                        "name": "Ярославль",
+                        "name": "Новосибирск",
                         "start_index": 5,
                         "warehouse_count": 1,
-                        "total_stock": 1,
+                        "total_stock": 5,
                         "end_index": 5
+                    },
+                    {
+                        "name": "Ярославль",
+                        "start_index": 6,
+                        "warehouse_count": 1,
+                        "total_stock": 1,
+                        "end_index": 6
                     }
                 ]
             },
@@ -559,18 +571,80 @@
     "period_data": {
         "today": {
             "wb": {
-                "revenue": 35846,
-                "orders_count": 41,
+                "revenue": 1986,
+                "orders_count": 3,
                 "sales_by_warehouse": [
                     {
                         "name": "Невинномысск",
-                        "count": 26,
-                        "revenue": 17212,
+                        "count": 3,
+                        "revenue": 1986,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 26,
-                                "revenue": 17212
+                                "count": 3,
+                                "revenue": 1986
+                            }
+                        ]
+                    }
+                ],
+                "sales_by_region": [
+                    {
+                        "name": "Ивановская область",
+                        "count": 1,
+                        "revenue": 662
+                    },
+                    {
+                        "name": "Республика Саха (Якутия)",
+                        "count": 1,
+                        "revenue": 662
+                    },
+                    {
+                        "name": "Московская область",
+                        "count": 1,
+                        "revenue": 662
+                    }
+                ],
+                "sales_by_product": [
+                    {
+                        "article": "SF0125",
+                        "count": 3,
+                        "revenue": 1986,
+                        "by_warehouse": [
+                            {
+                                "name": "Невинномысск",
+                                "count": 3,
+                                "revenue": 1986
+                            }
+                        ]
+                    }
+                ],
+                "redemptions_revenue": 0,
+                "redemptions_count": 0
+            },
+            "ozon": {
+                "revenue": 0,
+                "orders_count": 0,
+                "sales_by_warehouse": [],
+                "sales_by_region": [],
+                "sales_by_product": [],
+                "redemptions_revenue": 32.690000000000005,
+                "redemptions_count": 4
+            }
+        },
+        "yesterday": {
+            "wb": {
+                "revenue": 34522,
+                "orders_count": 39,
+                "sales_by_warehouse": [
+                    {
+                        "name": "Невинномысск",
+                        "count": 24,
+                        "revenue": 15888,
+                        "by_product": [
+                            {
+                                "article": "SF0125",
+                                "count": 24,
+                                "revenue": 15888
                             }
                         ]
                     },
@@ -732,13 +806,13 @@
                 "sales_by_product": [
                     {
                         "article": "SF0125",
-                        "count": 27,
-                        "revenue": 17874,
+                        "count": 25,
+                        "revenue": 16550,
                         "by_warehouse": [
                             {
                                 "name": "Невинномысск",
-                                "count": 26,
-                                "revenue": 17212
+                                "count": 24,
+                                "revenue": 15888
                             },
                             {
                                 "name": "Екатеринбург - Перспективная 14",
@@ -986,37 +1060,20 @@
                 "redemptions_count": 124
             }
         },
-        "yesterday": {
+        "days_3": {
             "wb": {
-                "revenue": 36836,
-                "orders_count": 41,
+                "revenue": 73344,
+                "orders_count": 83,
                 "sales_by_warehouse": [
                     {
                         "name": "Невинномысск",
-                        "count": 28,
-                        "revenue": 19164,
+                        "count": 55,
+                        "revenue": 37038,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 27,
-                                "revenue": 17874
-                            },
-                            {
-                                "article": "SF0250",
-                                "count": 1,
-                                "revenue": 1290
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Екатеринбург - Перспективная 14",
-                        "count": 3,
-                        "revenue": 5786,
-                        "by_product": [
-                            {
-                                "article": "SF0500",
-                                "count": 2,
-                                "revenue": 4496
+                                "count": 54,
+                                "revenue": 35748
                             },
                             {
                                 "article": "SF0250",
@@ -1027,30 +1084,52 @@
                     },
                     {
                         "name": "Владимир",
-                        "count": 4,
-                        "revenue": 5160,
+                        "count": 10,
+                        "revenue": 12900,
                         "by_product": [
                             {
                                 "article": "SF0250",
-                                "count": 4,
-                                "revenue": 5160
+                                "count": 10,
+                                "revenue": 12900
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Екатеринбург - Перспективная 14",
+                        "count": 6,
+                        "revenue": 9028,
+                        "by_product": [
+                            {
+                                "article": "SF0250",
+                                "count": 3,
+                                "revenue": 3870
+                            },
+                            {
+                                "article": "SF0500",
+                                "count": 2,
+                                "revenue": 4496
+                            },
+                            {
+                                "article": "SF0125",
+                                "count": 1,
+                                "revenue": 662
                             }
                         ]
                     },
                     {
                         "name": "Котовск",
-                        "count": 4,
-                        "revenue": 5142,
+                        "count": 7,
+                        "revenue": 6024,
                         "by_product": [
+                            {
+                                "article": "SFS050",
+                                "count": 4,
+                                "revenue": 1176
+                            },
                             {
                                 "article": "SM0125",
                                 "count": 2,
                                 "revenue": 2600
-                            },
-                            {
-                                "article": "SFS050",
-                                "count": 1,
-                                "revenue": 294
                             },
                             {
                                 "article": "SF0500",
@@ -1060,7 +1139,31 @@
                         ]
                     },
                     {
+                        "name": "Тюмень",
+                        "count": 1,
+                        "revenue": 4190,
+                        "by_product": [
+                            {
+                                "article": "SM0500",
+                                "count": 1,
+                                "revenue": 4190
+                            }
+                        ]
+                    },
+                    {
                         "name": "Самара (Новосемейкино)",
+                        "count": 2,
+                        "revenue": 2580,
+                        "by_product": [
+                            {
+                                "article": "SF0250",
+                                "count": 2,
+                                "revenue": 2580
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Электросталь",
                         "count": 1,
                         "revenue": 1290,
                         "by_product": [
@@ -1086,9 +1189,29 @@
                 ],
                 "sales_by_region": [
                     {
+                        "name": "Московская область",
+                        "count": 8,
+                        "revenue": 8398
+                    },
+                    {
                         "name": "Москва",
-                        "count": 6,
-                        "revenue": 3604
+                        "count": 11,
+                        "revenue": 7542
+                    },
+                    {
+                        "name": "Оренбургская область",
+                        "count": 2,
+                        "revenue": 5480
+                    },
+                    {
+                        "name": "Новосибирская область",
+                        "count": 3,
+                        "revenue": 4200
+                    },
+                    {
+                        "name": "Краснодарский край",
+                        "count": 4,
+                        "revenue": 3276
                     },
                     {
                         "name": "Тульская область",
@@ -1101,22 +1224,27 @@
                         "revenue": 2648
                     },
                     {
-                        "name": "Краснодарский край",
+                        "name": "Ивановская область",
+                        "count": 3,
+                        "revenue": 2624
+                    },
+                    {
+                        "name": "Красноярский край",
                         "count": 3,
                         "revenue": 2614
                     },
                     {
+                        "name": "Свердловская область",
+                        "count": 3,
+                        "revenue": 2614
+                    },
+                    {
+                        "name": "Воронежская область",
+                        "count": 2,
+                        "revenue": 2580
+                    },
+                    {
                         "name": "Республика Бурятия",
-                        "count": 1,
-                        "revenue": 2248
-                    },
-                    {
-                        "name": "Новосибирская область",
-                        "count": 1,
-                        "revenue": 2248
-                    },
-                    {
-                        "name": "Московская область",
                         "count": 1,
                         "revenue": 2248
                     },
@@ -1126,68 +1254,53 @@
                         "revenue": 2246
                     },
                     {
-                        "name": "Ивановская область",
-                        "count": 2,
-                        "revenue": 1962
+                        "name": "Ростовская область",
+                        "count": 3,
+                        "revenue": 1986
                     },
                     {
                         "name": "Пензенская область",
                         "count": 2,
                         "revenue": 1962
-                    },
-                    {
-                        "name": "Свердловская область",
-                        "count": 2,
-                        "revenue": 1952
-                    },
-                    {
-                        "name": "Красноярский край",
-                        "count": 2,
-                        "revenue": 1324
-                    },
-                    {
-                        "name": "Самарская область",
-                        "count": 1,
-                        "revenue": 1290
-                    },
-                    {
-                        "name": "Воронежская область",
-                        "count": 1,
-                        "revenue": 1290
-                    },
-                    {
-                        "name": "Волгоградская область",
-                        "count": 1,
-                        "revenue": 662
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0125",
-                        "count": 27,
-                        "revenue": 17874,
+                        "count": 55,
+                        "revenue": 36410,
                         "by_warehouse": [
                             {
                                 "name": "Невинномысск",
-                                "count": 27,
-                                "revenue": 17874
+                                "count": 54,
+                                "revenue": 35748
+                            },
+                            {
+                                "name": "Екатеринбург - Перспективная 14",
+                                "count": 1,
+                                "revenue": 662
                             }
                         ]
                     },
                     {
                         "article": "SF0250",
-                        "count": 7,
-                        "revenue": 9030,
+                        "count": 17,
+                        "revenue": 21930,
                         "by_warehouse": [
                             {
                                 "name": "Владимир",
-                                "count": 4,
-                                "revenue": 5160
+                                "count": 10,
+                                "revenue": 12900
+                            },
+                            {
+                                "name": "Екатеринбург - Перспективная 14",
+                                "count": 3,
+                                "revenue": 3870
                             },
                             {
                                 "name": "Самара (Новосемейкино)",
-                                "count": 1,
-                                "revenue": 1290
+                                "count": 2,
+                                "revenue": 2580
                             },
                             {
                                 "name": "Невинномысск",
@@ -1195,7 +1308,7 @@
                                 "revenue": 1290
                             },
                             {
-                                "name": "Екатеринбург - Перспективная 14",
+                                "name": "Электросталь",
                                 "count": 1,
                                 "revenue": 1290
                             }
@@ -1219,529 +1332,6 @@
                         ]
                     },
                     {
-                        "article": "SM0125",
-                        "count": 2,
-                        "revenue": 2600,
-                        "by_warehouse": [
-                            {
-                                "name": "Котовск",
-                                "count": 2,
-                                "revenue": 2600
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SFS050",
-                        "count": 2,
-                        "revenue": 588,
-                        "by_warehouse": [
-                            {
-                                "name": "Тула",
-                                "count": 1,
-                                "revenue": 294
-                            },
-                            {
-                                "name": "Котовск",
-                                "count": 1,
-                                "revenue": 294
-                            }
-                        ]
-                    }
-                ],
-                "redemptions_revenue": 34215.69999999998,
-                "redemptions_count": 54
-            },
-            "ozon": {
-                "revenue": 71010,
-                "orders_count": 48,
-                "sales_by_warehouse": [
-                    {
-                        "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                        "count": 36,
-                        "revenue": 49800,
-                        "by_product": []
-                    },
-                    {
-                        "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                        "count": 3,
-                        "revenue": 7179,
-                        "by_product": []
-                    },
-                    {
-                        "name": "АДЫГЕЙСК_РФЦ",
-                        "count": 3,
-                        "revenue": 6979,
-                        "by_product": []
-                    },
-                    {
-                        "name": "ПУШКИНО_1_РФЦ",
-                        "count": 4,
-                        "revenue": 3451,
-                        "by_product": []
-                    },
-                    {
-                        "name": "ХОРУГВИНО_РФЦ",
-                        "count": 1,
-                        "revenue": 2393,
-                        "by_product": []
-                    },
-                    {
-                        "name": "ГРИВНО_РФЦ",
-                        "count": 1,
-                        "revenue": 1208,
-                        "by_product": []
-                    }
-                ],
-                "sales_by_region": [
-                    {
-                        "name": "Москва, МО и Дальние регионы",
-                        "count": 13,
-                        "revenue": 16510
-                    },
-                    {
-                        "name": "Санкт-Петербург и СЗО",
-                        "count": 9,
-                        "revenue": 16424
-                    },
-                    {
-                        "name": "Дальний Восток",
-                        "count": 6,
-                        "revenue": 10332
-                    },
-                    {
-                        "name": "Екатеринбург",
-                        "count": 4,
-                        "revenue": 5397
-                    },
-                    {
-                        "name": "Тюмень",
-                        "count": 3,
-                        "revenue": 5229
-                    },
-                    {
-                        "name": "Новосибирск",
-                        "count": 2,
-                        "revenue": 3988
-                    },
-                    {
-                        "name": "Ростов",
-                        "count": 3,
-                        "revenue": 3422
-                    },
-                    {
-                        "name": "Красноярск",
-                        "count": 2,
-                        "revenue": 3190
-                    },
-                    {
-                        "name": "Воронеж",
-                        "count": 2,
-                        "revenue": 3054
-                    },
-                    {
-                        "name": "Ярославль",
-                        "count": 2,
-                        "revenue": 1509
-                    },
-                    {
-                        "name": "Невинномысск",
-                        "count": 1,
-                        "revenue": 1207
-                    },
-                    {
-                        "name": "Казань",
-                        "count": 1,
-                        "revenue": 748
-                    }
-                ],
-                "sales_by_product": [
-                    {
-                        "article": "SF0250",
-                        "count": 27,
-                        "revenue": 39178.0,
-                        "by_warehouse": [
-                            {
-                                "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 25,
-                                "revenue": 36763.0
-                            },
-                            {
-                                "name": "ГРИВНО_РФЦ",
-                                "count": 1,
-                                "revenue": 1208.0
-                            },
-                            {
-                                "name": "ПУШКИНО_1_РФЦ",
-                                "count": 1,
-                                "revenue": 1207.0
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SF0500",
-                        "count": 10,
-                        "revenue": 23630.0,
-                        "by_warehouse": [
-                            {
-                                "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 3,
-                                "revenue": 7179.0
-                            },
-                            {
-                                "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 3,
-                                "revenue": 7079.0
-                            },
-                            {
-                                "name": "АДЫГЕЙСК_РФЦ",
-                                "count": 3,
-                                "revenue": 6979.0
-                            },
-                            {
-                                "name": "ХОРУГВИНО_РФЦ",
-                                "count": 1,
-                                "revenue": 2393.0
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SF0125",
-                        "count": 11,
-                        "revenue": 8202.0,
-                        "by_warehouse": [
-                            {
-                                "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 8,
-                                "revenue": 5958.0
-                            },
-                            {
-                                "name": "ПУШКИНО_1_РФЦ",
-                                "count": 3,
-                                "revenue": 2244.0
-                            }
-                        ]
-                    }
-                ],
-                "redemptions_revenue": 30076.750000000004,
-                "redemptions_count": 105
-            }
-        },
-        "days_3": {
-            "wb": {
-                "revenue": 114802,
-                "orders_count": 133,
-                "sales_by_warehouse": [
-                    {
-                        "name": "Невинномысск",
-                        "count": 88,
-                        "revenue": 58884,
-                        "by_product": [
-                            {
-                                "article": "SF0125",
-                                "count": 87,
-                                "revenue": 57594
-                            },
-                            {
-                                "article": "SF0250",
-                                "count": 1,
-                                "revenue": 1290
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Владимир",
-                        "count": 13,
-                        "revenue": 16770,
-                        "by_product": [
-                            {
-                                "article": "SF0250",
-                                "count": 13,
-                                "revenue": 16770
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Екатеринбург - Перспективная 14",
-                        "count": 8,
-                        "revenue": 12566,
-                        "by_product": [
-                            {
-                                "article": "SF0250",
-                                "count": 4,
-                                "revenue": 5160
-                            },
-                            {
-                                "article": "SF0500",
-                                "count": 3,
-                                "revenue": 6744
-                            },
-                            {
-                                "article": "SF0125",
-                                "count": 1,
-                                "revenue": 662
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Котовск",
-                        "count": 12,
-                        "revenue": 10454,
-                        "by_product": [
-                            {
-                                "article": "SFS050",
-                                "count": 7,
-                                "revenue": 2058
-                            },
-                            {
-                                "article": "SM0125",
-                                "count": 3,
-                                "revenue": 3900
-                            },
-                            {
-                                "article": "SF0500",
-                                "count": 2,
-                                "revenue": 4496
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Самара (Новосемейкино)",
-                        "count": 5,
-                        "revenue": 6450,
-                        "by_product": [
-                            {
-                                "article": "SF0250",
-                                "count": 5,
-                                "revenue": 6450
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Тюмень",
-                        "count": 1,
-                        "revenue": 4190,
-                        "by_product": [
-                            {
-                                "article": "SM0500",
-                                "count": 1,
-                                "revenue": 4190
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Краснодар",
-                        "count": 2,
-                        "revenue": 2580,
-                        "by_product": [
-                            {
-                                "article": "SF0250",
-                                "count": 2,
-                                "revenue": 2580
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Электросталь",
-                        "count": 1,
-                        "revenue": 1290,
-                        "by_product": [
-                            {
-                                "article": "SF0250",
-                                "count": 1,
-                                "revenue": 1290
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Тула",
-                        "count": 2,
-                        "revenue": 956,
-                        "by_product": [
-                            {
-                                "article": "SF0125",
-                                "count": 1,
-                                "revenue": 662
-                            },
-                            {
-                                "article": "SFS050",
-                                "count": 1,
-                                "revenue": 294
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Рязань (Тюшевское)",
-                        "count": 1,
-                        "revenue": 662,
-                        "by_product": [
-                            {
-                                "article": "SF0125",
-                                "count": 1,
-                                "revenue": 662
-                            }
-                        ]
-                    }
-                ],
-                "sales_by_region": [
-                    {
-                        "name": "Москва",
-                        "count": 20,
-                        "revenue": 13500
-                    },
-                    {
-                        "name": "Московская область",
-                        "count": 13,
-                        "revenue": 12336
-                    },
-                    {
-                        "name": "Новосибирская область",
-                        "count": 5,
-                        "revenue": 7110
-                    },
-                    {
-                        "name": "Краснодарский край",
-                        "count": 9,
-                        "revenue": 6846
-                    },
-                    {
-                        "name": "Оренбургская область",
-                        "count": 2,
-                        "revenue": 5480
-                    },
-                    {
-                        "name": "Республика Крым",
-                        "count": 7,
-                        "revenue": 4894
-                    },
-                    {
-                        "name": "Свердловская область",
-                        "count": 4,
-                        "revenue": 3276
-                    },
-                    {
-                        "name": "Пензенская область",
-                        "count": 3,
-                        "revenue": 3252
-                    },
-                    {
-                        "name": "Воронежская область",
-                        "count": 3,
-                        "revenue": 3242
-                    },
-                    {
-                        "name": "Самарская область",
-                        "count": 3,
-                        "revenue": 3242
-                    },
-                    {
-                        "name": "Тульская область",
-                        "count": 3,
-                        "revenue": 3242
-                    },
-                    {
-                        "name": "Саратовская область",
-                        "count": 4,
-                        "revenue": 2918
-                    },
-                    {
-                        "name": "Ростовская область",
-                        "count": 4,
-                        "revenue": 2648
-                    },
-                    {
-                        "name": "Ивановская область",
-                        "count": 3,
-                        "revenue": 2624
-                    },
-                    {
-                        "name": "Нижегородская область",
-                        "count": 3,
-                        "revenue": 2614
-                    }
-                ],
-                "sales_by_product": [
-                    {
-                        "article": "SF0125",
-                        "count": 90,
-                        "revenue": 59580,
-                        "by_warehouse": [
-                            {
-                                "name": "Невинномысск",
-                                "count": 87,
-                                "revenue": 57594
-                            },
-                            {
-                                "name": "Тула",
-                                "count": 1,
-                                "revenue": 662
-                            },
-                            {
-                                "name": "Рязань (Тюшевское)",
-                                "count": 1,
-                                "revenue": 662
-                            },
-                            {
-                                "name": "Екатеринбург - Перспективная 14",
-                                "count": 1,
-                                "revenue": 662
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SF0250",
-                        "count": 26,
-                        "revenue": 33540,
-                        "by_warehouse": [
-                            {
-                                "name": "Владимир",
-                                "count": 13,
-                                "revenue": 16770
-                            },
-                            {
-                                "name": "Самара (Новосемейкино)",
-                                "count": 5,
-                                "revenue": 6450
-                            },
-                            {
-                                "name": "Екатеринбург - Перспективная 14",
-                                "count": 4,
-                                "revenue": 5160
-                            },
-                            {
-                                "name": "Краснодар",
-                                "count": 2,
-                                "revenue": 2580
-                            },
-                            {
-                                "name": "Невинномысск",
-                                "count": 1,
-                                "revenue": 1290
-                            },
-                            {
-                                "name": "Электросталь",
-                                "count": 1,
-                                "revenue": 1290
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SF0500",
-                        "count": 5,
-                        "revenue": 11240,
-                        "by_warehouse": [
-                            {
-                                "name": "Екатеринбург - Перспективная 14",
-                                "count": 3,
-                                "revenue": 6744
-                            },
-                            {
-                                "name": "Котовск",
-                                "count": 2,
-                                "revenue": 4496
-                            }
-                        ]
-                    },
-                    {
                         "article": "SM0500",
                         "count": 1,
                         "revenue": 4190,
@@ -1755,25 +1345,25 @@
                     },
                     {
                         "article": "SM0125",
-                        "count": 3,
-                        "revenue": 3900,
+                        "count": 2,
+                        "revenue": 2600,
                         "by_warehouse": [
                             {
                                 "name": "Котовск",
-                                "count": 3,
-                                "revenue": 3900
+                                "count": 2,
+                                "revenue": 2600
                             }
                         ]
                     },
                     {
                         "article": "SFS050",
-                        "count": 8,
-                        "revenue": 2352,
+                        "count": 5,
+                        "revenue": 1470,
                         "by_warehouse": [
                             {
                                 "name": "Котовск",
-                                "count": 7,
-                                "revenue": 2058
+                                "count": 4,
+                                "revenue": 1176
                             },
                             {
                                 "name": "Тула",
@@ -1783,17 +1373,17 @@
                         ]
                     }
                 ],
-                "redemptions_revenue": 105571.53000000007,
-                "redemptions_count": 158
+                "redemptions_revenue": 67721.53999999994,
+                "redemptions_count": 99
             },
             "ozon": {
-                "revenue": 248469,
-                "orders_count": 181,
+                "revenue": 146293,
+                "orders_count": 113,
                 "sales_by_warehouse": [
                     {
                         "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                        "count": 114,
-                        "revenue": 156055,
+                        "count": 55,
+                        "revenue": 70422,
                         "by_product": []
                     },
                     {
@@ -1804,14 +1394,14 @@
                     },
                     {
                         "name": "АДЫГЕЙСК_РФЦ",
-                        "count": 9,
-                        "revenue": 21137,
+                        "count": 6,
+                        "revenue": 14058,
                         "by_product": []
                     },
                     {
                         "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                        "count": 10,
-                        "revenue": 17721,
+                        "count": 4,
+                        "revenue": 8257,
                         "by_product": []
                     },
                     {
@@ -1830,58 +1420,43 @@
                 "sales_by_region": [
                     {
                         "name": "Москва, МО и Дальние регионы",
-                        "count": 48,
-                        "revenue": 64828
+                        "count": 31,
+                        "revenue": 38632
                     },
                     {
                         "name": "Санкт-Петербург и СЗО",
-                        "count": 24,
-                        "revenue": 33442
-                    },
-                    {
-                        "name": "Новосибирск",
-                        "count": 16,
-                        "revenue": 24138
-                    },
-                    {
-                        "name": "Дальний Восток",
-                        "count": 12,
-                        "revenue": 17721
+                        "count": 15,
+                        "revenue": 21672
                     },
                     {
                         "name": "Ростов",
-                        "count": 15,
-                        "revenue": 17386
+                        "count": 12,
+                        "revenue": 14269
                     },
                     {
-                        "name": "Екатеринбург",
-                        "count": 11,
-                        "revenue": 15222
+                        "name": "Дальний Восток",
+                        "count": 9,
+                        "revenue": 13036
+                    },
+                    {
+                        "name": "Новосибирск",
+                        "count": 8,
+                        "revenue": 10746
                     },
                     {
                         "name": "Воронеж",
-                        "count": 9,
-                        "revenue": 12332
+                        "count": 5,
+                        "revenue": 7803
                     },
                     {
                         "name": "Красноярск",
-                        "count": 7,
-                        "revenue": 8195
+                        "count": 6,
+                        "revenue": 7432
                     },
                     {
-                        "name": "Ярославль",
-                        "count": 7,
-                        "revenue": 8150
-                    },
-                    {
-                        "name": "Саратов",
-                        "count": 4,
-                        "revenue": 5550
-                    },
-                    {
-                        "name": "Самара",
-                        "count": 3,
-                        "revenue": 5434
+                        "name": "Екатеринбург",
+                        "count": 5,
+                        "revenue": 6605
                     },
                     {
                         "name": "Тюмень",
@@ -1889,31 +1464,46 @@
                         "revenue": 5229
                     },
                     {
-                        "name": "Омск",
-                        "count": 4,
-                        "revenue": 5219
-                    },
-                    {
                         "name": "Уфа",
                         "count": 4,
                         "revenue": 4802
                     },
                     {
-                        "name": "Краснодар",
+                        "name": "Омск",
+                        "count": 3,
+                        "revenue": 3624
+                    },
+                    {
+                        "name": "Ярославль",
+                        "count": 3,
+                        "revenue": 2687
+                    },
+                    {
+                        "name": "Невинномысск",
                         "count": 2,
-                        "revenue": 4786
+                        "revenue": 2415
+                    },
+                    {
+                        "name": "Краснодар",
+                        "count": 1,
+                        "revenue": 2393
+                    },
+                    {
+                        "name": "Пермь",
+                        "count": 2,
+                        "revenue": 1956
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0250",
-                        "count": 113,
-                        "revenue": 158754.0,
+                        "count": 69,
+                        "revenue": 89232.0,
                         "by_warehouse": [
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 83,
-                                "revenue": 123167.0
+                                "count": 39,
+                                "revenue": 53645.0
                             },
                             {
                                 "name": "ГРИВНО_РФЦ",
@@ -1934,23 +1524,23 @@
                     },
                     {
                         "article": "SF0500",
-                        "count": 24,
-                        "revenue": 56832.0,
+                        "count": 15,
+                        "revenue": 35495.0,
                         "by_warehouse": [
                             {
                                 "name": "АДЫГЕЙСК_РФЦ",
-                                "count": 9,
-                                "revenue": 21137.0
+                                "count": 6,
+                                "revenue": 14058.0
                             },
                             {
                                 "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 6,
-                                "revenue": 14358.0
+                                "count": 3,
+                                "revenue": 7179.0
                             },
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 6,
-                                "revenue": 14158.0
+                                "count": 3,
+                                "revenue": 7079.0
                             },
                             {
                                 "name": "ПУШКИНО_1_РФЦ",
@@ -1971,13 +1561,13 @@
                     },
                     {
                         "article": "SF0125",
-                        "count": 44,
-                        "revenue": 32883.0,
+                        "count": 29,
+                        "revenue": 21566.0,
                         "by_warehouse": [
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 25,
-                                "revenue": 18730.0
+                                "count": 13,
+                                "revenue": 9698.0
                             },
                             {
                                 "name": "ГРИВНО_РФЦ",
@@ -1988,33 +1578,28 @@
                                 "name": "ПУШКИНО_1_РФЦ",
                                 "count": 6,
                                 "revenue": 4388.0
-                            },
-                            {
-                                "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 3,
-                                "revenue": 2285.0
                             }
                         ]
                     }
                 ],
-                "redemptions_revenue": 94466.45999999999,
-                "redemptions_count": 353
+                "redemptions_revenue": 62478.05,
+                "redemptions_count": 233
             }
         },
         "days_7": {
             "wb": {
-                "revenue": 339216.93,
-                "orders_count": 373,
+                "revenue": 279578.92999999993,
+                "orders_count": 310,
                 "sales_by_warehouse": [
                     {
                         "name": "Невинномысск",
-                        "count": 152,
-                        "revenue": 116071.56,
+                        "count": 147,
+                        "revenue": 111175.56,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 140,
-                                "revenue": 92679.56
+                                "count": 136,
+                                "revenue": 90031.56
                             },
                             {
                                 "article": "SF0250",
@@ -2023,8 +1608,8 @@
                             },
                             {
                                 "article": "SF0500",
-                                "count": 4,
-                                "revenue": 8992
+                                "count": 3,
+                                "revenue": 6744
                             },
                             {
                                 "article": "SF2500",
@@ -2035,62 +1620,57 @@
                     },
                     {
                         "name": "Владимир",
-                        "count": 113,
-                        "revenue": 95528.56999999999,
+                        "count": 79,
+                        "revenue": 68624.56999999999,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 80,
-                                "revenue": 52958.57
+                                "count": 53,
+                                "revenue": 35084.57
                             },
                             {
                                 "article": "SF0250",
-                                "count": 33,
-                                "revenue": 42570
+                                "count": 26,
+                                "revenue": 33540
                             }
                         ]
                     },
                     {
                         "name": "Котовск",
-                        "count": 49,
-                        "revenue": 47449.4,
+                        "count": 37,
+                        "revenue": 38581.4,
                         "by_product": [
                             {
                                 "article": "SFS050",
-                                "count": 24,
-                                "revenue": 7055.4
+                                "count": 17,
+                                "revenue": 4997.4
                             },
                             {
                                 "article": "SM0125",
-                                "count": 15,
-                                "revenue": 19500
+                                "count": 12,
+                                "revenue": 15600
                             },
                             {
                                 "article": "SF0500",
-                                "count": 9,
-                                "revenue": 20232
-                            },
-                            {
-                                "article": "SF0125",
-                                "count": 1,
-                                "revenue": 662
+                                "count": 8,
+                                "revenue": 17984
                             }
                         ]
                     },
                     {
                         "name": "Екатеринбург - Перспективная 14",
-                        "count": 22,
-                        "revenue": 33510,
+                        "count": 16,
+                        "revenue": 24812,
                         "by_product": [
                             {
                                 "article": "SF0250",
-                                "count": 14,
-                                "revenue": 18060
+                                "count": 9,
+                                "revenue": 11610
                             },
                             {
                                 "article": "SF0500",
-                                "count": 6,
-                                "revenue": 13488
+                                "count": 5,
+                                "revenue": 11240
                             },
                             {
                                 "article": "SM0125",
@@ -2106,18 +1686,13 @@
                     },
                     {
                         "name": "Самара (Новосемейкино)",
-                        "count": 13,
-                        "revenue": 17100,
+                        "count": 12,
+                        "revenue": 14852,
                         "by_product": [
                             {
                                 "article": "SF0250",
                                 "count": 11,
                                 "revenue": 14190
-                            },
-                            {
-                                "article": "SF0500",
-                                "count": 1,
-                                "revenue": 2248
                             },
                             {
                                 "article": "SF0125",
@@ -2128,18 +1703,13 @@
                     },
                     {
                         "name": "Тюмень",
-                        "count": 6,
-                        "revenue": 13392,
+                        "count": 3,
+                        "revenue": 8278,
                         "by_product": [
                             {
                                 "article": "SM0250",
-                                "count": 4,
-                                "revenue": 8176
-                            },
-                            {
-                                "article": "SM0100",
-                                "count": 1,
-                                "revenue": 1026
+                                "count": 2,
+                                "revenue": 4088
                             },
                             {
                                 "article": "SM0500",
@@ -2161,28 +1731,6 @@
                         ]
                     },
                     {
-                        "name": "Тула",
-                        "count": 5,
-                        "revenue": 4160,
-                        "by_product": [
-                            {
-                                "article": "SFS050",
-                                "count": 2,
-                                "revenue": 588
-                            },
-                            {
-                                "article": "SF0125",
-                                "count": 2,
-                                "revenue": 1324
-                            },
-                            {
-                                "article": "SF0500",
-                                "count": 1,
-                                "revenue": 2248
-                            }
-                        ]
-                    },
-                    {
                         "name": "Электросталь",
                         "count": 3,
                         "revenue": 3242,
@@ -2200,6 +1748,23 @@
                         ]
                     },
                     {
+                        "name": "Тула",
+                        "count": 4,
+                        "revenue": 1912,
+                        "by_product": [
+                            {
+                                "article": "SFS050",
+                                "count": 2,
+                                "revenue": 588
+                            },
+                            {
+                                "article": "SF0125",
+                                "count": 2,
+                                "revenue": 1324
+                            }
+                        ]
+                    },
+                    {
                         "name": "Коледино",
                         "count": 2,
                         "revenue": 955.4,
@@ -2213,18 +1778,6 @@
                                 "article": "SFS050",
                                 "count": 1,
                                 "revenue": 293.4
-                            }
-                        ]
-                    },
-                    {
-                        "name": "СЦ Барнаул",
-                        "count": 1,
-                        "revenue": 662,
-                        "by_product": [
-                            {
-                                "article": "SF0125",
-                                "count": 1,
-                                "revenue": 662
                             }
                         ]
                     },
@@ -2268,53 +1821,43 @@
                 "sales_by_region": [
                     {
                         "name": "Москва",
-                        "count": 59,
-                        "revenue": 48122
+                        "count": 42,
+                        "revenue": 33748
                     },
                     {
                         "name": "Московская область",
-                        "count": 43,
-                        "revenue": 39454
+                        "count": 34,
+                        "revenue": 30346
                     },
                     {
                         "name": "Краснодарский край",
-                        "count": 25,
-                        "revenue": 30392
-                    },
-                    {
-                        "name": "Санкт-Петербург",
-                        "count": 15,
-                        "revenue": 15624
+                        "count": 22,
+                        "revenue": 27188
                     },
                     {
                         "name": "Новосибирская область",
-                        "count": 12,
-                        "revenue": 15234
+                        "count": 11,
+                        "revenue": 12986
                     },
                     {
-                        "name": "Республика Крым",
-                        "count": 15,
-                        "revenue": 11204
+                        "name": "Санкт-Петербург",
+                        "count": 13,
+                        "revenue": 12076
                     },
                     {
                         "name": "Оренбургская область",
-                        "count": 7,
-                        "revenue": 10046
+                        "count": 5,
+                        "revenue": 8722
+                    },
+                    {
+                        "name": "Республика Крым",
+                        "count": 12,
+                        "revenue": 7836
                     },
                     {
                         "name": "Свердловская область",
-                        "count": 10,
-                        "revenue": 9142
-                    },
-                    {
-                        "name": "Нижегородская область",
-                        "count": 9,
-                        "revenue": 7474
-                    },
-                    {
-                        "name": "Ростовская область",
-                        "count": 10,
-                        "revenue": 6880
+                        "count": 8,
+                        "revenue": 7190
                     },
                     {
                         "name": "Иркутская область",
@@ -2322,56 +1865,56 @@
                         "revenue": 6482
                     },
                     {
-                        "name": "Мурманская область",
-                        "count": 4,
-                        "revenue": 6184
+                        "name": "Ростовская область",
+                        "count": 9,
+                        "revenue": 6218
                     },
                     {
-                        "name": "Самарская область",
-                        "count": 5,
-                        "revenue": 6152
-                    },
-                    {
-                        "name": "Красноярский край",
+                        "name": "Нижегородская область",
                         "count": 7,
                         "revenue": 5890
                     },
                     {
-                        "name": "Воронежская область",
+                        "name": "Волгоградская область",
+                        "count": 5,
+                        "revenue": 5320
+                    },
+                    {
+                        "name": "Омская область",
                         "count": 6,
-                        "revenue": 5856
+                        "revenue": 5228
+                    },
+                    {
+                        "name": "Красноярский край",
+                        "count": 6,
+                        "revenue": 5228
+                    },
+                    {
+                        "name": "Воронежская область",
+                        "count": 5,
+                        "revenue": 5194
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0125",
-                        "count": 231,
-                        "revenue": 152920.12999999998,
+                        "count": 198,
+                        "revenue": 131074.13,
                         "by_warehouse": [
                             {
                                 "name": "Невинномысск",
-                                "count": 140,
-                                "revenue": 92679.56
+                                "count": 136,
+                                "revenue": 90031.56
                             },
                             {
                                 "name": "Владимир",
-                                "count": 80,
-                                "revenue": 52958.57
+                                "count": 53,
+                                "revenue": 35084.57
                             },
                             {
                                 "name": "Тула",
                                 "count": 2,
                                 "revenue": 1324
-                            },
-                            {
-                                "name": "СЦ Барнаул",
-                                "count": 1,
-                                "revenue": 662
-                            },
-                            {
-                                "name": "Котовск",
-                                "count": 1,
-                                "revenue": 662
                             },
                             {
                                 "name": "Электросталь",
@@ -2412,23 +1955,23 @@
                     },
                     {
                         "article": "SF0250",
-                        "count": 71,
-                        "revenue": 91590,
+                        "count": 59,
+                        "revenue": 76110,
                         "by_warehouse": [
                             {
                                 "name": "Владимир",
-                                "count": 33,
-                                "revenue": 42570
-                            },
-                            {
-                                "name": "Екатеринбург - Перспективная 14",
-                                "count": 14,
-                                "revenue": 18060
+                                "count": 26,
+                                "revenue": 33540
                             },
                             {
                                 "name": "Самара (Новосемейкино)",
                                 "count": 11,
                                 "revenue": 14190
+                            },
+                            {
+                                "name": "Екатеринбург - Перспективная 14",
+                                "count": 9,
+                                "revenue": 11610
                             },
                             {
                                 "name": "Невинномысск",
@@ -2449,45 +1992,35 @@
                     },
                     {
                         "article": "SF0500",
-                        "count": 21,
-                        "revenue": 47208,
+                        "count": 16,
+                        "revenue": 35968,
                         "by_warehouse": [
                             {
                                 "name": "Котовск",
-                                "count": 9,
-                                "revenue": 20232
+                                "count": 8,
+                                "revenue": 17984
                             },
                             {
                                 "name": "Екатеринбург - Перспективная 14",
-                                "count": 6,
-                                "revenue": 13488
+                                "count": 5,
+                                "revenue": 11240
                             },
                             {
                                 "name": "Невинномысск",
-                                "count": 4,
-                                "revenue": 8992
-                            },
-                            {
-                                "name": "Тула",
-                                "count": 1,
-                                "revenue": 2248
-                            },
-                            {
-                                "name": "Самара (Новосемейкино)",
-                                "count": 1,
-                                "revenue": 2248
+                                "count": 3,
+                                "revenue": 6744
                             }
                         ]
                     },
                     {
                         "article": "SM0125",
-                        "count": 16,
-                        "revenue": 20800,
+                        "count": 13,
+                        "revenue": 16900,
                         "by_warehouse": [
                             {
                                 "name": "Котовск",
-                                "count": 15,
-                                "revenue": 19500
+                                "count": 12,
+                                "revenue": 15600
                             },
                             {
                                 "name": "Екатеринбург - Перспективная 14",
@@ -2497,26 +2030,14 @@
                         ]
                     },
                     {
-                        "article": "SM0250",
-                        "count": 4,
-                        "revenue": 8176,
-                        "by_warehouse": [
-                            {
-                                "name": "Тюмень",
-                                "count": 4,
-                                "revenue": 8176
-                            }
-                        ]
-                    },
-                    {
                         "article": "SFS050",
-                        "count": 27,
-                        "revenue": 7936.799999999999,
+                        "count": 20,
+                        "revenue": 5878.799999999999,
                         "by_warehouse": [
                             {
                                 "name": "Котовск",
-                                "count": 24,
-                                "revenue": 7055.4
+                                "count": 17,
+                                "revenue": 4997.4
                             },
                             {
                                 "name": "Тула",
@@ -2555,35 +2076,35 @@
                         ]
                     },
                     {
-                        "article": "SM0100",
-                        "count": 1,
-                        "revenue": 1026,
+                        "article": "SM0250",
+                        "count": 2,
+                        "revenue": 4088,
                         "by_warehouse": [
                             {
                                 "name": "Тюмень",
-                                "count": 1,
-                                "revenue": 1026
+                                "count": 2,
+                                "revenue": 4088
                             }
                         ]
                     }
                 ],
-                "redemptions_revenue": 283281.1599999999,
-                "redemptions_count": 404
+                "redemptions_revenue": 218078.82999999996,
+                "redemptions_count": 331
             },
             "ozon": {
-                "revenue": 524348,
-                "orders_count": 373,
+                "revenue": 469535,
+                "orders_count": 326,
                 "sales_by_warehouse": [
                     {
                         "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                        "count": 258,
-                        "revenue": 351413,
+                        "count": 216,
+                        "revenue": 305045,
                         "by_product": []
                     },
                     {
                         "name": "АДЫГЕЙСК_РФЦ",
-                        "count": 23,
-                        "revenue": 54554,
+                        "count": 21,
+                        "revenue": 49768,
                         "by_product": []
                     },
                     {
@@ -2593,15 +2114,15 @@
                         "by_product": []
                     },
                     {
-                        "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                        "count": 18,
-                        "revenue": 28889,
-                        "by_product": []
-                    },
-                    {
                         "name": "ХОРУГВИНО_РФЦ",
                         "count": 16,
                         "revenue": 27649,
+                        "by_product": []
+                    },
+                    {
+                        "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
+                        "count": 16,
+                        "revenue": 25863,
                         "by_product": []
                     },
                     {
@@ -2633,101 +2154,95 @@
                         "count": 1,
                         "revenue": 743,
                         "by_product": []
-                    },
-                    {
-                        "name": "СПБ_ШУШАРЫ_РФЦ",
-                        "count": 1,
-                        "revenue": 633,
-                        "by_product": []
                     }
                 ],
                 "sales_by_region": [
                     {
                         "name": "Москва, МО и Дальние регионы",
-                        "count": 96,
-                        "revenue": 140663
+                        "count": 86,
+                        "revenue": 126337
                     },
                     {
                         "name": "Санкт-Петербург и СЗО",
-                        "count": 51,
-                        "revenue": 71655
+                        "count": 46,
+                        "revenue": 66820
                     },
                     {
                         "name": "Ростов",
-                        "count": 31,
-                        "revenue": 40437
+                        "count": 30,
+                        "revenue": 38660
                     },
                     {
                         "name": "Новосибирск",
-                        "count": 26,
-                        "revenue": 36228
+                        "count": 25,
+                        "revenue": 33835
                     },
                     {
                         "name": "Воронеж",
-                        "count": 23,
-                        "revenue": 30739
+                        "count": 20,
+                        "revenue": 28840
                     },
                     {
                         "name": "Екатеринбург",
-                        "count": 18,
-                        "revenue": 25432
+                        "count": 16,
+                        "revenue": 21878
                     },
                     {
                         "name": "Дальний Восток",
-                        "count": 17,
-                        "revenue": 23117
+                        "count": 15,
+                        "revenue": 21851
                     },
                     {
                         "name": "Тюмень",
-                        "count": 13,
-                        "revenue": 20165
+                        "count": 12,
+                        "revenue": 17772
                     },
                     {
                         "name": "Красноярск",
-                        "count": 15,
-                        "revenue": 17994
+                        "count": 12,
+                        "revenue": 16095
                     },
                     {
                         "name": "Ярославль",
-                        "count": 13,
-                        "revenue": 15373
+                        "count": 9,
+                        "revenue": 11697
                     },
                     {
                         "name": "Уфа",
-                        "count": 9,
-                        "revenue": 13775
+                        "count": 7,
+                        "revenue": 11365
                     },
                     {
                         "name": "Краснодар",
-                        "count": 8,
-                        "revenue": 12400
+                        "count": 6,
+                        "revenue": 11134
                     },
                     {
                         "name": "Пермь",
-                        "count": 8,
-                        "revenue": 11073
-                    },
-                    {
-                        "name": "Саратов",
                         "count": 7,
-                        "revenue": 10884
+                        "revenue": 10440
                     },
                     {
                         "name": "Казань",
-                        "count": 8,
-                        "revenue": 10156
+                        "count": 7,
+                        "revenue": 9523
+                    },
+                    {
+                        "name": "Саратов",
+                        "count": 5,
+                        "revenue": 7858
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0250",
-                        "count": 209,
-                        "revenue": 323923.0,
+                        "count": 196,
+                        "revenue": 301102.0,
                         "by_warehouse": [
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 161,
-                                "revenue": 257583.0
+                                "count": 148,
+                                "revenue": 234762.0
                             },
                             {
                                 "name": "ГРИВНО_РФЦ",
@@ -2758,23 +2273,23 @@
                     },
                     {
                         "article": "SF0500",
-                        "count": 52,
-                        "revenue": 122422.0,
+                        "count": 46,
+                        "revenue": 108064.0,
                         "by_warehouse": [
                             {
                                 "name": "АДЫГЕЙСК_РФЦ",
-                                "count": 23,
-                                "revenue": 54554.0
+                                "count": 21,
+                                "revenue": 49768.0
                             },
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 17,
-                                "revenue": 39152.0
+                                "count": 14,
+                                "revenue": 31973.0
                             },
                             {
                                 "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 8,
-                                "revenue": 19144.0
+                                "count": 7,
+                                "revenue": 16751.0
                             },
                             {
                                 "name": "ПУШКИНО_1_РФЦ",
@@ -2800,23 +2315,18 @@
                     },
                     {
                         "article": "SF0125",
-                        "count": 112,
-                        "revenue": 78003.0,
+                        "count": 84,
+                        "revenue": 60369.0,
                         "by_warehouse": [
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 80,
-                                "revenue": 54678.0
+                                "count": 54,
+                                "revenue": 38310.0
                             },
                             {
                                 "name": "ГРИВНО_РФЦ",
                                 "count": 10,
                                 "revenue": 7480.0
-                            },
-                            {
-                                "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 7,
-                                "revenue": 4947.0
                             },
                             {
                                 "name": "ПУШКИНО_1_РФЦ",
@@ -2829,6 +2339,11 @@
                                 "revenue": 4373.0
                             },
                             {
+                                "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
+                                "count": 6,
+                                "revenue": 4314.0
+                            },
+                            {
                                 "name": "ОМСК_РФЦ",
                                 "count": 1,
                                 "revenue": 761.0
@@ -2837,23 +2352,18 @@
                                 "name": "САМАРА_РФЦ",
                                 "count": 1,
                                 "revenue": 743.0
-                            },
-                            {
-                                "name": "СПБ_ШУШАРЫ_РФЦ",
-                                "count": 1,
-                                "revenue": 633.0
                             }
                         ]
                     }
                 ],
-                "redemptions_revenue": 171726.92999999996,
-                "redemptions_count": 677
+                "redemptions_revenue": 150782.32999999996,
+                "redemptions_count": 585
             }
         },
         "days_30": {
             "wb": {
-                "revenue": 1854622.9300000013,
-                "orders_count": 1964,
+                "revenue": 1793017.930000001,
+                "orders_count": 1901,
                 "sales_by_warehouse": [
                     {
                         "name": "Владимир",
@@ -2884,18 +2394,18 @@
                     },
                     {
                         "name": "Екатеринбург - Перспективная 14",
-                        "count": 328,
-                        "revenue": 332036.91000000003,
+                        "count": 315,
+                        "revenue": 315582.91000000003,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 210,
-                                "revenue": 139018.94
+                                "count": 203,
+                                "revenue": 134384.94
                             },
                             {
                                 "article": "SF0250",
-                                "count": 92,
-                                "revenue": 118680.52
+                                "count": 87,
+                                "revenue": 112230.52
                             },
                             {
                                 "article": "SF0500",
@@ -2904,8 +2414,8 @@
                             },
                             {
                                 "article": "SF2500",
-                                "count": 6,
-                                "revenue": 32220
+                                "count": 5,
+                                "revenue": 26850
                             },
                             {
                                 "article": "SFS050",
@@ -2921,13 +2431,13 @@
                     },
                     {
                         "name": "Невинномысск",
-                        "count": 374,
-                        "revenue": 326318.47000000003,
+                        "count": 343,
+                        "revenue": 305796.47000000003,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 304,
-                                "revenue": 201247.56
+                                "count": 273,
+                                "revenue": 180725.56
                             },
                             {
                                 "article": "SF0250",
@@ -2975,8 +2485,8 @@
                     },
                     {
                         "name": "Котовск",
-                        "count": 178,
-                        "revenue": 202665.08,
+                        "count": 177,
+                        "revenue": 201069.08,
                         "by_product": [
                             {
                                 "article": "SFS050",
@@ -2990,8 +2500,8 @@
                             },
                             {
                                 "article": "SM0125",
-                                "count": 34,
-                                "revenue": 47548
+                                "count": 33,
+                                "revenue": 45952
                             },
                             {
                                 "article": "SF0250",
@@ -3007,18 +2517,13 @@
                     },
                     {
                         "name": "Тюмень",
-                        "count": 69,
-                        "revenue": 128602,
+                        "count": 55,
+                        "revenue": 107968,
                         "by_product": [
                             {
                                 "article": "SM0250",
-                                "count": 28,
-                                "revenue": 57232
-                            },
-                            {
-                                "article": "SF0125",
-                                "count": 12,
-                                "revenue": 7944
+                                "count": 25,
+                                "revenue": 51100
                             },
                             {
                                 "article": "SM0100",
@@ -3026,9 +2531,14 @@
                                 "revenue": 10260
                             },
                             {
+                                "article": "SF0125",
+                                "count": 6,
+                                "revenue": 3972
+                            },
+                            {
                                 "article": "SF0250",
-                                "count": 9,
-                                "revenue": 11610
+                                "count": 5,
+                                "revenue": 6450
                             },
                             {
                                 "article": "SM0500",
@@ -3036,26 +2546,26 @@
                                 "revenue": 20950
                             },
                             {
-                                "article": "SF2500",
-                                "count": 3,
-                                "revenue": 16110
-                            },
-                            {
                                 "article": "SF0500",
                                 "count": 2,
                                 "revenue": 4496
+                            },
+                            {
+                                "article": "SF2500",
+                                "count": 2,
+                                "revenue": 10740
                             }
                         ]
                     },
                     {
                         "name": "Краснодар",
-                        "count": 16,
-                        "revenue": 19260,
+                        "count": 15,
+                        "revenue": 18598,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 7,
-                                "revenue": 4634
+                                "count": 6,
+                                "revenue": 3972
                             },
                             {
                                 "article": "SF0250",
@@ -3071,8 +2581,8 @@
                     },
                     {
                         "name": "Электросталь",
-                        "count": 16,
-                        "revenue": 14739,
+                        "count": 15,
+                        "revenue": 14326,
                         "by_product": [
                             {
                                 "article": "SF0125",
@@ -3083,23 +2593,18 @@
                                 "article": "SF0250",
                                 "count": 7,
                                 "revenue": 9030
-                            },
-                            {
-                                "article": "SFS050",
-                                "count": 1,
-                                "revenue": 413
                             }
                         ]
                     },
                     {
                         "name": "Тула",
-                        "count": 10,
-                        "revenue": 8098,
+                        "count": 9,
+                        "revenue": 7436,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 6,
-                                "revenue": 3972
+                                "count": 5,
+                                "revenue": 3310
                             },
                             {
                                 "article": "SFS050",
@@ -3120,13 +2625,13 @@
                     },
                     {
                         "name": "Коледино",
-                        "count": 11,
-                        "revenue": 6545.4,
+                        "count": 10,
+                        "revenue": 5883.4,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 9,
-                                "revenue": 5958
+                                "count": 8,
+                                "revenue": 5296
                             },
                             {
                                 "article": "SFS050",
@@ -3209,68 +2714,68 @@
                 "sales_by_region": [
                     {
                         "name": "Московская область",
-                        "count": 276,
-                        "revenue": 267017
+                        "count": 270,
+                        "revenue": 258586
                     },
                     {
                         "name": "Москва",
-                        "count": 253,
-                        "revenue": 229685
+                        "count": 250,
+                        "revenue": 227071
                     },
                     {
                         "name": "Краснодарский край",
-                        "count": 131,
-                        "revenue": 142275
+                        "count": 127,
+                        "revenue": 138999
                     },
                     {
                         "name": "Санкт-Петербург",
-                        "count": 89,
-                        "revenue": 88110
+                        "count": 84,
+                        "revenue": 84172
                     },
                     {
                         "name": "Ростовская область",
-                        "count": 70,
-                        "revenue": 69014
+                        "count": 67,
+                        "revenue": 67028
                     },
                     {
                         "name": "Свердловская область",
-                        "count": 51,
-                        "revenue": 43020
+                        "count": 49,
+                        "revenue": 41068
                     },
                     {
                         "name": "Нижегородская область",
-                        "count": 40,
-                        "revenue": 38663
+                        "count": 38,
+                        "revenue": 37339
                     },
                     {
                         "name": "Самарская область",
-                        "count": 42,
-                        "revenue": 37838
+                        "count": 41,
+                        "revenue": 35794
                     },
                     {
                         "name": "Республика Крым",
-                        "count": 48,
-                        "revenue": 36780
+                        "count": 46,
+                        "revenue": 35456
                     },
                     {
                         "name": "Новосибирская область",
-                        "count": 32,
-                        "revenue": 34456
-                    },
-                    {
-                        "name": "Ставропольский край",
-                        "count": 38,
-                        "revenue": 33963
+                        "count": 30,
+                        "revenue": 33132
                     },
                     {
                         "name": "Республика Татарстан",
-                        "count": 42,
-                        "revenue": 32686
+                        "count": 41,
+                        "revenue": 32024
+                    },
+                    {
+                        "name": "Ставропольский край",
+                        "count": 36,
+                        "revenue": 32011
                     },
                     {
                         "name": "Воронежская область",
-                        "count": 35,
-                        "revenue": 31376
+                        "count": 34,
+                        "revenue": 30714
                     },
                     {
                         "name": "Волгоградская область",
@@ -3278,16 +2783,16 @@
                         "revenue": 29764
                     },
                     {
-                        "name": "Тульская область",
-                        "count": 28,
-                        "revenue": 28357
+                        "name": "Омская область",
+                        "count": 21,
+                        "revenue": 26718
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0125",
-                        "count": 1343,
-                        "revenue": 889049.3400000001,
+                        "count": 1296,
+                        "revenue": 857935.3400000001,
                         "by_warehouse": [
                             {
                                 "name": "Владимир",
@@ -3296,13 +2801,8 @@
                             },
                             {
                                 "name": "Невинномысск",
-                                "count": 304,
-                                "revenue": 201247.56
-                            },
-                            {
-                                "name": "Екатеринбург - Перспективная 14",
-                                "count": 210,
-                                "revenue": 139018.94
+                                "count": 273,
+                                "revenue": 180725.56
                             },
                             {
                                 "name": "Самара (Новосемейкино)",
@@ -3310,14 +2810,9 @@
                                 "revenue": 137030.96
                             },
                             {
-                                "name": "Тюмень",
-                                "count": 12,
-                                "revenue": 7944
-                            },
-                            {
-                                "name": "Коледино",
-                                "count": 9,
-                                "revenue": 5958
+                                "name": "Екатеринбург - Перспективная 14",
+                                "count": 203,
+                                "revenue": 134384.94
                             },
                             {
                                 "name": "Электросталь",
@@ -3325,14 +2820,24 @@
                                 "revenue": 5296
                             },
                             {
+                                "name": "Коледино",
+                                "count": 8,
+                                "revenue": 5296
+                            },
+                            {
+                                "name": "Тюмень",
+                                "count": 6,
+                                "revenue": 3972
+                            },
+                            {
                                 "name": "Краснодар",
-                                "count": 7,
-                                "revenue": 4634
+                                "count": 6,
+                                "revenue": 3972
                             },
                             {
                                 "name": "Тула",
-                                "count": 6,
-                                "revenue": 3972
+                                "count": 5,
+                                "revenue": 3310
                             },
                             {
                                 "name": "СПБ Шушары",
@@ -3388,13 +2893,13 @@
                     },
                     {
                         "article": "SF0250",
-                        "count": 316,
-                        "revenue": 407641.75,
+                        "count": 307,
+                        "revenue": 396031.75,
                         "by_warehouse": [
                             {
                                 "name": "Екатеринбург - Перспективная 14",
-                                "count": 92,
-                                "revenue": 118680.52
+                                "count": 87,
+                                "revenue": 112230.52
                             },
                             {
                                 "name": "Владимир",
@@ -3412,14 +2917,14 @@
                                 "revenue": 64500
                             },
                             {
-                                "name": "Тюмень",
-                                "count": 9,
-                                "revenue": 11610
-                            },
-                            {
                                 "name": "Электросталь",
                                 "count": 7,
                                 "revenue": 9030
+                            },
+                            {
+                                "name": "Тюмень",
+                                "count": 5,
+                                "revenue": 6450
                             },
                             {
                                 "name": "Краснодар",
@@ -3487,8 +2992,8 @@
                     },
                     {
                         "article": "SF2500",
-                        "count": 29,
-                        "revenue": 155730,
+                        "count": 27,
+                        "revenue": 144990,
                         "by_warehouse": [
                             {
                                 "name": "Владимир",
@@ -3496,14 +3001,14 @@
                                 "revenue": 48330
                             },
                             {
-                                "name": "Екатеринбург - Перспективная 14",
+                                "name": "Самара (Новосемейкино)",
                                 "count": 6,
                                 "revenue": 32220
                             },
                             {
-                                "name": "Самара (Новосемейкино)",
-                                "count": 6,
-                                "revenue": 32220
+                                "name": "Екатеринбург - Перспективная 14",
+                                "count": 5,
+                                "revenue": 26850
                             },
                             {
                                 "name": "Невинномысск",
@@ -3512,20 +3017,20 @@
                             },
                             {
                                 "name": "Тюмень",
-                                "count": 3,
-                                "revenue": 16110
+                                "count": 2,
+                                "revenue": 10740
                             }
                         ]
                     },
                     {
                         "article": "SM0250",
-                        "count": 34,
-                        "revenue": 69496,
+                        "count": 31,
+                        "revenue": 63364,
                         "by_warehouse": [
                             {
                                 "name": "Тюмень",
-                                "count": 28,
-                                "revenue": 57232
+                                "count": 25,
+                                "revenue": 51100
                             },
                             {
                                 "name": "Краснодар",
@@ -3541,13 +3046,13 @@
                     },
                     {
                         "article": "SM0125",
-                        "count": 37,
-                        "revenue": 51972,
+                        "count": 36,
+                        "revenue": 50376,
                         "by_warehouse": [
                             {
                                 "name": "Котовск",
-                                "count": 34,
-                                "revenue": 47548
+                                "count": 33,
+                                "revenue": 45952
                             },
                             {
                                 "name": "Владимир",
@@ -3568,8 +3073,8 @@
                     },
                     {
                         "article": "SFS050",
-                        "count": 93,
-                        "revenue": 31466.480000000003,
+                        "count": 92,
+                        "revenue": 31053.480000000003,
                         "by_warehouse": [
                             {
                                 "name": "Котовск",
@@ -3585,11 +3090,6 @@
                                 "name": "Коледино",
                                 "count": 2,
                                 "revenue": 587.4
-                            },
-                            {
-                                "name": "Электросталь",
-                                "count": 1,
-                                "revenue": 413
                             },
                             {
                                 "name": "Екатеринбург - Перспективная 14",
@@ -3623,29 +3123,29 @@
                         ]
                     }
                 ],
-                "redemptions_revenue": 1336402.0399999693,
-                "redemptions_count": 1993
+                "redemptions_revenue": 1298807.6199999694,
+                "redemptions_count": 1932
             },
             "ozon": {
-                "revenue": 2282125.0,
-                "orders_count": 1961,
+                "revenue": 2207936.0,
+                "orders_count": 1904,
                 "sales_by_warehouse": [
                     {
                         "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                        "count": 471,
-                        "revenue": 636809,
+                        "count": 468,
+                        "revenue": 631973,
                         "by_product": []
                     },
                     {
                         "name": "АДЫГЕЙСК_РФЦ",
-                        "count": 262,
-                        "revenue": 434768.0,
+                        "count": 240,
+                        "revenue": 399832.0,
                         "by_product": []
                     },
                     {
                         "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                        "count": 384,
-                        "revenue": 391848,
+                        "count": 375,
+                        "revenue": 377170,
                         "by_product": []
                     },
                     {
@@ -3680,14 +3180,14 @@
                     },
                     {
                         "name": "ПУШКИНО_1_РФЦ",
-                        "count": 34,
-                        "revenue": 24924,
+                        "count": 14,
+                        "revenue": 12264,
                         "by_product": []
                     },
                     {
                         "name": "СПБ_ШУШАРЫ_РФЦ",
-                        "count": 9,
-                        "revenue": 17176,
+                        "count": 6,
+                        "revenue": 10097,
                         "by_product": []
                     },
                     {
@@ -3724,28 +3224,28 @@
                 "sales_by_region": [
                     {
                         "name": "Москва, МО и Дальние регионы",
-                        "count": 501,
-                        "revenue": 615675.0
+                        "count": 487,
+                        "revenue": 600635.0
                     },
                     {
                         "name": "Санкт-Петербург и СЗО",
-                        "count": 268,
-                        "revenue": 324052.0
+                        "count": 254,
+                        "revenue": 305001.0
                     },
                     {
                         "name": "Ростов",
-                        "count": 141,
-                        "revenue": 177242.0
+                        "count": 137,
+                        "revenue": 170992.0
                     },
                     {
                         "name": "Новосибирск",
-                        "count": 150,
-                        "revenue": 145244
+                        "count": 146,
+                        "revenue": 139990
                     },
                     {
                         "name": "Дальний Восток",
-                        "count": 89,
-                        "revenue": 108372
+                        "count": 86,
+                        "revenue": 103734
                     },
                     {
                         "name": "Воронеж",
@@ -3754,23 +3254,23 @@
                     },
                     {
                         "name": "Екатеринбург",
-                        "count": 94,
-                        "revenue": 103182
+                        "count": 91,
+                        "revenue": 99325
                     },
                     {
                         "name": "Краснодар",
-                        "count": 80,
-                        "revenue": 98080
+                        "count": 77,
+                        "revenue": 92536
                     },
                     {
                         "name": "Красноярск",
-                        "count": 85,
-                        "revenue": 88540
+                        "count": 84,
+                        "revenue": 86147
                     },
                     {
                         "name": "Ярославль",
-                        "count": 68,
-                        "revenue": 72920.0
+                        "count": 67,
+                        "revenue": 72287.0
                     },
                     {
                         "name": "Тюмень",
@@ -3789,35 +3289,35 @@
                     },
                     {
                         "name": "Самара",
-                        "count": 47,
-                        "revenue": 49229
+                        "count": 45,
+                        "revenue": 46984
                     },
                     {
                         "name": "Саратов",
-                        "count": 41,
-                        "revenue": 43768
+                        "count": 39,
+                        "revenue": 41523
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0250",
-                        "count": 823,
-                        "revenue": 1026580.0,
+                        "count": 798,
+                        "revenue": 988314.0,
                         "by_warehouse": [
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
-                                "count": 218,
-                                "revenue": 322821.0
-                            },
-                            {
-                                "name": "АДЫГЕЙСК_РФЦ",
-                                "count": 155,
-                                "revenue": 181986.0
+                                "count": 215,
+                                "revenue": 317985.0
                             },
                             {
                                 "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 143,
-                                "revenue": 162339.0
+                                "count": 141,
+                                "revenue": 159132.0
+                            },
+                            {
+                                "name": "АДЫГЕЙСК_РФЦ",
+                                "count": 135,
+                                "revenue": 151763.0
                             },
                             {
                                 "name": "ВОРОНЕЖ_РФЦ",
@@ -3913,18 +3413,18 @@
                     },
                     {
                         "article": "SF0500",
-                        "count": 234,
-                        "revenue": 556264.0,
+                        "count": 225,
+                        "revenue": 534900.0,
                         "by_warehouse": [
                             {
                                 "name": "АДЫГЕЙСК_РФЦ",
-                                "count": 106,
-                                "revenue": 252149.0
+                                "count": 104,
+                                "revenue": 247436.0
                             },
                             {
                                 "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 43,
-                                "revenue": 102481.0
+                                "count": 39,
+                                "revenue": 92909.0
                             },
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
@@ -3943,8 +3443,8 @@
                             },
                             {
                                 "name": "СПБ_ШУШАРЫ_РФЦ",
-                                "count": 5,
-                                "revenue": 11865.0
+                                "count": 2,
+                                "revenue": 4786.0
                             },
                             {
                                 "name": "ПУШКИНО_1_РФЦ",
@@ -3985,8 +3485,8 @@
                     },
                     {
                         "article": "SF0125",
-                        "count": 827,
-                        "revenue": 524078.0,
+                        "count": 804,
+                        "revenue": 509519.0,
                         "by_warehouse": [
                             {
                                 "name": "ВОРОНЕЖ_РФЦ",
@@ -4000,8 +3500,8 @@
                             },
                             {
                                 "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-                                "count": 197,
-                                "revenue": 123016.0
+                                "count": 194,
+                                "revenue": 121117.0
                             },
                             {
                                 "name": "ЕКАТЕРИНБУРГ_РФЦ_НОВЫЙ",
@@ -4010,8 +3510,8 @@
                             },
                             {
                                 "name": "ПУШКИНО_1_РФЦ",
-                                "count": 31,
-                                "revenue": 20196.0
+                                "count": 11,
+                                "revenue": 7536.0
                             },
                             {
                                 "name": "ГРИВНО_РФЦ",
@@ -4150,8 +3650,8 @@
                         ]
                     }
                 ],
-                "redemptions_revenue": 938716.1400000005,
-                "redemptions_count": 3875
+                "redemptions_revenue": 912083.2499999997,
+                "redemptions_count": 3770
             }
         }
     }
