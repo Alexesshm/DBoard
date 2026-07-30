@@ -3,6 +3,32 @@
  * Fetches and displays marketplace analytics data with charts.
  */
 
+/**
+ * Article → Label mapping
+ * Visible label shown in UI; article shown on hover (title/tooltip)
+ */
+const ARTICLE_LABEL_MAP = {
+    'SF0050':  'SF0050/1,5л',
+    'SF0125':  'SF0125/3л',
+    'SF0250':  'SF0250/6л',
+    'SF0500':  'SF0500/12л',
+    'SF2500':  'SF2500/60л',
+    'SFS050':  'SFS050/STRT',
+    'SM0125':  'SM0125/M1,5л',
+    'SM0250':  'SM0250/M7л',
+    'SM0500':  'SM0500/M14л',
+    'SM0100':  'SM0100/M100',
+    'FSF300':  'FSF300/FLLR',
+};
+
+/**
+ * Return display label for an article code.
+ * Falls back to the article itself if not in map.
+ */
+function getLabel(article) {
+    return ARTICLE_LABEL_MAP[article] || article;
+}
+
 // State
 let isLoading = false;
 let hasError = false;
@@ -294,7 +320,7 @@ function updateDetailTable() {
                     ${sales.map((s, i) => {
             const products = s.by_product || [];
             const tooltipContent = products.length > 0
-                ? products.map(p => `<div class="wh-tooltip-row"><span>${p.article}</span><span>${p.count} шт.</span></div>`).join('')
+                ? products.map(p => `<div class="wh-tooltip-row"><span title="${p.article}">${getLabel(p.article)}</span><span>${p.count} шт.</span></div>`).join('')
                 : '<div class="wh-tooltip-empty">Нет данных о товарах</div>';
             return `
                         <tr class="orders-row-with-tooltip">
@@ -653,7 +679,7 @@ function createClusteredHorizontalChart(chartData, mpType) {
             ${Object.entries(productColors).map(([article, color]) => `
                 <div class="h-legend-item">
                     <span class="h-legend-color" style="background: ${color}"></span>
-                    <span class="h-legend-label">${article}</span>
+                    <span class="h-legend-label" title="${article}">${getLabel(article)}</span>
                 </div>
             `).join('')}
         </div>
@@ -697,7 +723,7 @@ function createClusteredHorizontalChart(chartData, mpType) {
                     <div class="bar-segment" 
                          style="width: ${widthPercent}%; background: ${data.color};"
                          title="${article}: ${data.qty} шт"
-                         onmouseenter="showSegmentTooltip(event, '${article}', ${data.qty})"
+                         onmouseenter="showSegmentTooltip(event, '${article}', ${data.qty}, '${getLabel(article).replace(/'/g, '&#39;')}')"
                          onmouseleave="hideSegmentTooltip()">
                         ${showLabel ? `<span class="bar-segment-label">${data.qty}</span>` : ''}
                     </div>
@@ -755,14 +781,15 @@ function toggleRegionGroup(headerEl) {
 /**
  * Show tooltip for bar segment
  */
-function showSegmentTooltip(event, article, qty) {
+function showSegmentTooltip(event, article, qty, label) {
     hideSegmentTooltip();
 
+    const displayLabel = label || getLabel(article);
     const tooltip = document.createElement('div');
     tooltip.id = 'segmentTooltip';
     tooltip.className = 'segment-tooltip';
     tooltip.innerHTML = `
-        <div class="segment-tooltip-article">${article}</div>
+        <div class="segment-tooltip-article" title="${article}">${displayLabel}</div>
         <div class="segment-tooltip-qty">${formatNumber(qty)} шт</div>
     `;
 
@@ -858,7 +885,7 @@ function createStocksSummary(stocksByProduct, mpType = 'FBW') {
                     <div class="stock-item" data-product-idx="${idx}">
                         <div class="stock-color" style="background: ${p.color}"></div>
                         <div class="stock-info">
-                            <span class="stock-article">${p.article}</span>
+                            <span class="stock-article" title="${p.article}">${getLabel(p.article)}</span>
                             <span class="stock-warehouses">${p.warehouses_count} складов</span>
                         </div>
                         <div class="stock-value">
@@ -914,7 +941,7 @@ function createProductsGrid(products, mpKey) {
                  onmouseenter="showWarehouseTooltip(event, this)"
                  onmouseleave="hideWarehouseTooltip()">
                 <div class="product-rank">#${i + 1} ${trendIcon}</div>
-                <div class="product-article">${p.article}</div>
+                <div class="product-article" title="${p.article}">${getLabel(p.article)}</div>
                 <div class="product-stats">
                     <div class="product-count">${p.count} <span>шт.</span></div>
                     <div class="product-revenue" style="color: #22c55e; font-weight: 600;">${formatCurrency(p.revenue)}</div>
@@ -949,7 +976,7 @@ function showSalesTooltip(event) {
         <div class="tooltip-content">
             ${products.slice(0, 10).map(p => `
                 <div class="tooltip-row">
-                    <span class="tooltip-product-name">${p.article}</span>
+                    <span class="tooltip-product-name" title="${p.article}">${getLabel(p.article)}</span>
                     <span class="tooltip-product-rev">${formatCurrency(p.revenue)} <small style="color:rgba(255,255,255,0.4); font-weight:400; margin-left:5px">${p.count} шт.</small></span>
                 </div>
             `).join('')}
@@ -994,11 +1021,12 @@ function showWarehouseTooltip(event, card) {
     tooltip.id = 'warehouseTooltip';
     tooltip.className = 'warehouse-tooltip';
 
-    const article = card.querySelector('.product-article').textContent;
+    const articleText = card.querySelector('.product-article').getAttribute('title') || card.querySelector('.product-article').textContent;
+    const labelText = card.querySelector('.product-article').textContent;
 
     tooltip.innerHTML = `
         <div class="tooltip-header">
-            <span class="tooltip-title">📦 ${article} — по складам</span>
+            <span class="tooltip-title">📦 ${labelText} — по складам</span>
         </div>
         <div class="tooltip-content">
             ${warehouses.map((wh, i) => `
@@ -2075,7 +2103,7 @@ function buildStockMatrix(mpKey) {
     const colCount = articles.length;
 
     let headerCols = articles.map(art => `
-        <th class="matrix-art-col" title="${art}">${art}</th>
+        <th class="matrix-art-col" title="${art}">${getLabel(art)}</th>
     `).join('');
 
     let rows = '';
