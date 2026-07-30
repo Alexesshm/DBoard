@@ -2366,3 +2366,326 @@ body {
     font-style: italic;
     padding: 8px 0;
 }
+
+/* ===== STOCK MATRIX ===== */
+
+.stock-matrix-wrapper {
+    width: 100%;
+    overflow: hidden;
+}
+
+.stock-matrix-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--glass-border);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.matrix-title-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+}
+
+.matrix-title-icon {
+    font-size: 1.1rem;
+}
+
+.matrix-legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.55);
+    flex-wrap: wrap;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.legend-dot.heat-high  { background: rgba(34, 197, 94, 0.7); }
+.legend-dot.heat-mid   { background: rgba(234, 179, 8, 0.7); }
+.legend-dot.heat-low   { background: rgba(249, 115, 22, 0.5); }
+.legend-dot.heat-zero  { background: rgba(255,255,255,0.06); }
+
+/* Scroll container */
+.stock-matrix-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-bottom: 8px;
+    /* custom scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168,85,247,0.4) transparent;
+}
+
+.stock-matrix-scroll::-webkit-scrollbar {
+    height: 5px;
+}
+.stock-matrix-scroll::-webkit-scrollbar-track { background: transparent; }
+.stock-matrix-scroll::-webkit-scrollbar-thumb {
+    background: rgba(168,85,247,0.4);
+    border-radius: 3px;
+}
+
+/* Table */
+.stock-matrix-table {
+    width: 100%;
+    min-width: max-content;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.82rem;
+}
+
+.stock-matrix-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #0d0d18;
+    padding: 9px 10px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.65);
+    text-align: center;
+    white-space: nowrap;
+    border-bottom: 2px solid rgba(168,85,247,0.3);
+    letter-spacing: 0.03em;
+}
+
+.stock-matrix-table thead th.matrix-row-label,
+.stock-matrix-table thead th.matrix-total-col {
+    text-align: left;
+}
+
+/* Sticky first column */
+.matrix-row-label {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #0d0d18;
+    min-width: 200px;
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stock-matrix-table thead .matrix-row-label {
+    z-index: 4; /* header + sticky col */
+}
+
+/* Total column (second sticky) */
+.matrix-total-col {
+    min-width: 70px;
+    text-align: center !important;
+}
+
+/* Article header */
+.matrix-art-col {
+    min-width: 80px;
+    text-align: center !important;
+    font-family: 'Outfit', monospace;
+    letter-spacing: 0.05em;
+    color: rgba(168,85,247,0.9) !important;
+    font-size: 0.75rem !important;
+}
+
+/* === CLUSTER ROWS === */
+.matrix-cluster-row {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.matrix-cluster-row:hover {
+    background: rgba(168,85,247,0.06) !important;
+}
+
+.matrix-cluster-row td {
+    background: rgba(168,85,247,0.07);
+    border-top: 1px solid rgba(168,85,247,0.2);
+    border-bottom: 1px solid rgba(168,85,247,0.12);
+    padding: 10px 10px;
+}
+
+.cluster-label {
+    background: rgba(168,85,247,0.07) !important;
+}
+
+.matrix-toggle {
+    display: inline-block;
+    width: 16px;
+    font-size: 0.7rem;
+    color: rgba(168,85,247,0.7);
+    transition: transform 0.2s;
+    margin-right: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.matrix-cluster-icon {
+    margin-right: 5px;
+    font-size: 0.9rem;
+}
+
+.matrix-cluster-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.92);
+}
+
+.matrix-cluster-count {
+    margin-left: 8px;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.35);
+    font-weight: 400;
+}
+
+.cluster-row-total {
+    text-align: center !important;
+}
+
+.cluster-qty {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: rgba(168,85,247,0.9);
+}
+
+/* === WAREHOUSE ROWS === */
+.matrix-wh-row td {
+    background: rgba(255,255,255,0.015);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding: 7px 10px;
+    transition: background 0.1s;
+}
+
+.matrix-wh-row:hover td {
+    background: rgba(255,255,255,0.04) !important;
+}
+
+.wh-label {
+    background: rgba(255,255,255,0.015) !important;
+}
+
+.matrix-wh-row:hover .wh-label {
+    background: rgba(255,255,255,0.04) !important;
+}
+
+.wh-indent {
+    color: rgba(168,85,247,0.4);
+    margin-right: 6px;
+    font-size: 0.85rem;
+}
+
+.matrix-wh-name {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.7);
+    font-weight: 400;
+}
+
+.wh-total-cell {
+    text-align: center !important;
+}
+
+.matrix-qty-unit {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.3);
+    margin-left: 2px;
+}
+
+/* === MATRIX CELLS === */
+.matrix-cell {
+    text-align: center !important;
+    padding: 6px 8px !important;
+    vertical-align: middle;
+    transition: background 0.15s;
+    position: relative;
+}
+
+.matrix-qty {
+    font-weight: 600;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.matrix-dash {
+    color: rgba(255,255,255,0.18);
+    font-size: 0.9rem;
+}
+
+.matrix-zero {
+    color: rgba(255,255,255,0.12);
+    font-size: 1rem;
+}
+
+/* === HEATMAP CLASSES === */
+.heat-high {
+    background: rgba(34, 197, 94, 0.15) !important;
+}
+.heat-high .matrix-qty { color: #4ade80; }
+
+.heat-mid {
+    background: rgba(234, 179, 8, 0.12) !important;
+}
+.heat-mid .matrix-qty { color: #facc15; }
+
+.heat-low {
+    background: rgba(249, 115, 22, 0.1) !important;
+}
+.heat-low .matrix-qty { color: #fb923c; }
+
+.heat-zero {
+    background: transparent !important;
+}
+
+/* Cluster summary cells */
+.cluster-total-cell.heat-cluster-has {
+    background: rgba(168,85,247,0.12) !important;
+}
+.cluster-total-cell.heat-cluster-has .matrix-qty {
+    color: rgba(200,150,255,0.9);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+.cluster-total-cell.heat-cluster-zero {
+    background: transparent !important;
+}
+.cluster-total-cell.heat-cluster-zero .matrix-dash {
+    color: rgba(255,255,255,0.12);
+}
+
+/* Cell hover accent */
+.wh-cell:hover {
+    filter: brightness(1.3);
+    cursor: default;
+}
+
+/* Empty state */
+.stock-matrix-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.35);
+}
+
+.matrix-empty-icon { font-size: 2.5rem; }
+.matrix-empty-text { font-size: 0.9rem; }
+
+/* Matrix header label */
+.matrix-header-label {
+    font-size: 0.78rem !important;
+    color: rgba(255,255,255,0.5) !important;
+    text-align: left !important;
+}
