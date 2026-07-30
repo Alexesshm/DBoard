@@ -315,30 +315,7 @@ function updateDetailTable() {
             </table>
         `;
     } else if (tab === 'regions') {
-        const salesPeriodData = dashboardData.period_data?.[currentPeriod]?.[mpKey] || {};
-        const regions = salesPeriodData.sales_by_region || [];
-        html = `
-            <table class="detail-table">
-                <thead>
-                    <tr>
-                        <th class="table-rank">#</th>
-                        <th>Регион / Кластер</th>
-                        <th style="text-align: right;">Заказов</th>
-                        <th style="text-align: right;">Выручка</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${regions.map((r, i) => `
-                        <tr>
-                            <td class="table-rank">${i + 1}</td>
-                            <td><span class="table-value-main">${r.name}</span></td>
-                            <td style="text-align: right;"><span class="table-value-main">${r.count}</span><span class="table-value-sub">шт.</span></td>
-                            <td style="text-align: right;" class="table-positive">${formatCurrency(r.revenue)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
+        html = buildStockMatrix(mpKey);
     }
 
     if (!html || html.includes('<tbody></tbody>')) {
@@ -2009,5 +1986,199 @@ function toggleClusterGroup(headerRow) {
         nextRow.style.display = isCollapsed ? '' : 'none';
         nextRow = nextRow.nextElementSibling;
     }
+}
+
+// ===== STOCK MATRIX (Регионы) =====
+
+/**
+ * Build stock matrix: rows = clusters + warehouses, columns = articles
+ * Shows quantity at intersection (0 = empty, number = in stock)
+ */
+function buildStockMatrix(mpKey) {
+    const stocksData = dashboardData?.stocks?.[mpKey] || {};
+    const chartData = stocksData.chart_data;
+    const allArticles = stocksData.all_articles || [];
+
+    if (!chartData || !chartData.labels || chartData.labels.length === 0) {
+        return `<div class="stock-matrix-empty">
+            <div class="matrix-empty-icon">📦</div>
+            <div class="matrix-empty-text">Нет данных об остатках по складам</div>
+        </div>`;
+    }
+
+    const warehouses = chartData.labels || [];
+    const datasets = chartData.datasets || [];
+    const articles = allArticles.length > 0 ? allArticles : datasets.map(d => d.label);
+
+    // Build lookup: warehouse -> article -> qty
+    const stockLookup = {}; // warehouseName -> { article: qty }
+    warehouses.forEach((wh, idx) => {
+        stockLookup[wh] = {};
+        datasets.forEach(ds => {
+            stockLookup[wh][ds.label] = ds.data[idx] || 0;
+        });
+    });
+
+    // Group warehouses by cluster
+    const clustersMap = {};
+    const clusterOrder = [];
+
+    warehouses.forEach(wh => {
+        const clusterName = getWarehouseCluster(wh, mpKey);
+        if (!clustersMap[clusterName]) {
+            clustersMap[clusterName] = { name: clusterName, warehouses: [], totalStock: 0 };
+            clusterOrder.push(clusterName);
+        }
+        const whTotal = Object.values(stockLookup[wh]).reduce((s, v) => s + v, 0);
+        clustersMap[clusterName].warehouses.push({ name: wh, total: whTotal });
+        clustersMap[clusterName].totalStock += whTotal;
+    });
+
+    // Sort clusters by total stock desc
+    clusterOrder.sort((a, b) => clustersMap[b].totalStock - clustersMap[a].totalStock);
+
+    // Build article totals per cluster
+    const clusterArticleTotals = {};
+    clusterOrder.forEach(clusterName => {
+        clusterArticleTotals[clusterName] = {};
+        articles.forEach(art => {
+            clusterArticleTotals[clusterName][art] = 0;
+        });
+        clustersMap[clusterName].warehouses.forEach(wh => {
+            articles.forEach(art => {
+                clusterArticleTotals[clusterName][art] += stockLookup[wh.name][art] || 0;
+            });
+        });
+    });
+
+    // Find global max for heatmap scaling (per article column)
+    const articleMax = {};
+    articles.forEach(art => {
+        let max = 0;
+        warehouses.forEach(wh => { if ((stockLookup[wh][art] || 0) > max) max = stockLookup[wh][art] || 0; });
+        articleMax[art] = max;
+    });
+
+    /**
+     * Returns heatmap CSS class based on value and max
+     */
+    function heatClass(val, max) {
+        if (val === 0 || val === null || val === undefined) return 'heat-zero';
+        if (max === 0) return 'heat-low';
+        const pct = val / max;
+        if (pct >= 0.66) return 'heat-high';
+        if (pct >= 0.33) return 'heat-mid';
+        return 'heat-low';
+    }
+
+    // ---- Build HTML ----
+    const colCount = articles.length;
+
+    let headerCols = articles.map(art => `
+        <th class="matrix-art-col" title="${art}">${art}</th>
+    `).join('');
+
+    let rows = '';
+
+    clusterOrder.forEach((clusterName, ci) => {
+        const cluster = clustersMap[clusterName];
+        const clusterTotals = clusterArticleTotals[clusterName];
+        const clusterId = `cluster-${ci}`;
+
+        // Cluster summary row
+        const clusterCells = articles.map(art => {
+            const val = clusterTotals[art];
+            const cls = val > 0 ? 'heat-cluster-has' : 'heat-cluster-zero';
+            return `<td class="matrix-cell cluster-total-cell ${cls}">
+                ${val > 0 ? `<span class="matrix-qty">${formatNumber(val)}</span>` : '<span class="matrix-dash">—</span>'}
+            </td>`;
+        }).join('');
+
+        rows += `
+        <tr class="matrix-cluster-row" onclick="toggleMatrixCluster('${clusterId}')">
+            <td class="matrix-row-label cluster-label">
+                <span class="matrix-toggle" id="toggle-${clusterId}">▼</span>
+                <span class="matrix-cluster-icon">🌍</span>
+                <span class="matrix-cluster-name">${clusterName}</span>
+                <span class="matrix-cluster-count">${cluster.warehouses.length} скл</span>
+            </td>
+            <td class="matrix-cell cluster-row-total">
+                <span class="matrix-qty cluster-qty">${formatNumber(cluster.totalStock)}</span>
+            </td>
+            ${clusterCells}
+        </tr>`;
+
+        // Warehouse rows within cluster
+        cluster.warehouses
+            .sort((a, b) => b.total - a.total)
+            .forEach((wh, wi) => {
+                const whCells = articles.map(art => {
+                    const val = stockLookup[wh.name][art] || 0;
+                    const cls = heatClass(val, articleMax[art]);
+                    return `<td class="matrix-cell wh-cell ${cls}" title="${wh.name} · ${art}: ${val} шт">
+                        ${val > 0
+                            ? `<span class="matrix-qty">${formatNumber(val)}</span>`
+                            : '<span class="matrix-zero">·</span>'
+                        }
+                    </td>`;
+                }).join('');
+
+                rows += `
+        <tr class="matrix-wh-row cluster-matrix-child" data-cluster="${clusterId}">
+            <td class="matrix-row-label wh-label">
+                <span class="wh-indent">└</span>
+                <span class="matrix-wh-name" title="${wh.name}">${wh.name.replace(/_/g, ' ')}</span>
+            </td>
+            <td class="matrix-cell wh-total-cell">
+                <span class="matrix-qty">${formatNumber(wh.total)}</span>
+                <span class="matrix-qty-unit">шт</span>
+            </td>
+            ${whCells}
+        </tr>`;
+            });
+    });
+
+    return `
+    <div class="stock-matrix-wrapper">
+        <div class="stock-matrix-header">
+            <div class="matrix-title-block">
+                <span class="matrix-title-icon">🗺️</span>
+                <span>Матрица остатков по регионам</span>
+            </div>
+            <div class="matrix-legend">
+                <span class="legend-dot heat-high"></span><span>Высокий</span>
+                <span class="legend-dot heat-mid"></span><span>Средний</span>
+                <span class="legend-dot heat-low"></span><span>Низкий</span>
+                <span class="legend-dot heat-zero"></span><span>Нет</span>
+            </div>
+        </div>
+        <div class="stock-matrix-scroll">
+            <table class="stock-matrix-table">
+                <thead>
+                    <tr>
+                        <th class="matrix-row-label matrix-header-label">Кластер / Склад</th>
+                        <th class="matrix-total-col">Итого</th>
+                        ${headerCols}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Toggle warehouse rows within a cluster in the stock matrix
+ */
+function toggleMatrixCluster(clusterId) {
+    const toggle = document.getElementById(`toggle-${clusterId}`);
+    const rows = document.querySelectorAll(`.cluster-matrix-child[data-cluster="${clusterId}"]`);
+    const isCollapsed = toggle && toggle.textContent === '▶';
+
+    if (toggle) toggle.textContent = isCollapsed ? '▼' : '▶';
+    rows.forEach(row => { row.style.display = isCollapsed ? '' : 'none'; });
 }
 
