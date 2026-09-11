@@ -1,10 +1,10 @@
 {
-    "last_update": "10.09.2026 22:18",
+    "last_update": "11.09.2026 03:08",
     "summary": {
         "wb_stocks": 652,
-        "ozon_stocks": 1703,
-        "total_stocks": 2355,
-        "total_sales_today": 23775
+        "ozon_stocks": 1702,
+        "total_stocks": 2354,
+        "total_sales_today": 639
     },
     "marketplaces": [
         {
@@ -57,11 +57,11 @@
                         },
                         {
                             "name": "В пути до получателей",
-                            "quantity": 86
+                            "quantity": 87
                         },
                         {
                             "name": "В пути возвраты на склад WB",
-                            "quantity": 45
+                            "quantity": 44
                         }
                     ]
                 },
@@ -73,7 +73,7 @@
                     "by_warehouse": [
                         {
                             "name": "В пути возвраты на склад WB",
-                            "quantity": 174
+                            "quantity": 175
                         },
                         {
                             "name": "Всего находится на складах",
@@ -89,7 +89,7 @@
                         },
                         {
                             "name": "В пути до получателей",
-                            "quantity": 24
+                            "quantity": 23
                         },
                         {
                             "name": "Тула",
@@ -371,7 +371,7 @@
                 {
                     "name": "СПБ_ПОРОШКИНО_РФЦ",
                     "warehouse_id": "СПБ_ПОРОШКИНО_РФЦ",
-                    "quantity": 271,
+                    "quantity": 270,
                     "items_count": 4
                 },
                 {
@@ -456,7 +456,7 @@
                 },
                 {
                     "article": "SF0250",
-                    "quantity": 382,
+                    "quantity": 381,
                     "warehouses_count": 7,
                     "color": "#80651b"
                 },
@@ -553,7 +553,7 @@
                             134,
                             0,
                             0,
-                            54,
+                            53,
                             0,
                             25,
                             60,
@@ -648,7 +648,7 @@
                         "name": "Санкт-Петербург и СЗО",
                         "start_index": 3,
                         "warehouse_count": 2,
-                        "total_stock": 293,
+                        "total_stock": 292,
                         "end_index": 4
                     },
                     {
@@ -714,6 +714,58 @@
     },
     "period_data": {
         "today": {
+            "wb": {
+                "revenue": 639,
+                "orders_count": 1,
+                "sales_by_warehouse": [
+                    {
+                        "name": "Склад WB РФ",
+                        "count": 1,
+                        "revenue": 639,
+                        "by_product": [
+                            {
+                                "article": "SF0125",
+                                "count": 1,
+                                "revenue": 639
+                            }
+                        ]
+                    }
+                ],
+                "sales_by_region": [
+                    {
+                        "name": "Амурская область",
+                        "count": 1,
+                        "revenue": 639
+                    }
+                ],
+                "sales_by_product": [
+                    {
+                        "article": "SF0125",
+                        "count": 1,
+                        "revenue": 639,
+                        "by_warehouse": [
+                            {
+                                "name": "Склад WB РФ",
+                                "count": 1,
+                                "revenue": 639
+                            }
+                        ]
+                    }
+                ],
+                "redemptions_revenue": 0,
+                "redemptions_count": 0
+            },
+            "ozon": {
+                "revenue": 0,
+                "orders_count": 0,
+                "sales_by_warehouse": [],
+                "sales_by_region": [],
+                "sales_by_product": [],
+                "redemptions_revenue": 0,
+                "redemptions_count": 0
+            }
+        },
+        "yesterday": {
             "wb": {
                 "revenue": 23775,
                 "orders_count": 27,
@@ -873,7 +925,7 @@
                         ]
                     }
                 ],
-                "redemptions_revenue": 13105.060000000001,
+                "redemptions_revenue": 13264.799999999997,
                 "redemptions_count": 27
             },
             "ozon": {
@@ -886,25 +938,35 @@
                 "redemptions_count": 0
             }
         },
-        "yesterday": {
+        "days_3": {
             "wb": {
-                "revenue": 19107,
-                "orders_count": 21,
+                "revenue": 43521,
+                "orders_count": 49,
                 "sales_by_warehouse": [
                     {
                         "name": "Склад WB РФ",
-                        "count": 21,
-                        "revenue": 19107,
+                        "count": 49,
+                        "revenue": 43521,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 13,
-                                "revenue": 8242
+                                "count": 26,
+                                "revenue": 16476
                             },
                             {
                                 "article": "SF0250",
-                                "count": 4,
-                                "revenue": 5108
+                                "count": 17,
+                                "revenue": 16609
+                            },
+                            {
+                                "article": "SF0500",
+                                "count": 2,
+                                "revenue": 4089
+                            },
+                            {
+                                "article": "SM0125",
+                                "count": 2,
+                                "revenue": 4975
                             },
                             {
                                 "article": "SFS050",
@@ -915,30 +977,30 @@
                                 "article": "SM0100",
                                 "count": 1,
                                 "revenue": 950
-                            },
-                            {
-                                "article": "SF0500",
-                                "count": 1,
-                                "revenue": 1907
-                            },
-                            {
-                                "article": "SM0125",
-                                "count": 1,
-                                "revenue": 2478
                             }
                         ]
                     }
                 ],
                 "sales_by_region": [
                     {
+                        "name": "Нижегородская область",
+                        "count": 4,
+                        "revenue": 5677
+                    },
+                    {
+                        "name": "Московская область",
+                        "count": 7,
+                        "revenue": 5257
+                    },
+                    {
+                        "name": "Краснодарский край",
+                        "count": 3,
+                        "revenue": 2763
+                    },
+                    {
                         "name": "Самарская область",
                         "count": 2,
                         "revenue": 2554
-                    },
-                    {
-                        "name": "Нижегородская область",
-                        "count": 2,
-                        "revenue": 2541
                     },
                     {
                         "name": "Удмуртская Республика",
@@ -946,9 +1008,29 @@
                         "revenue": 2478
                     },
                     {
-                        "name": "Краснодарский край",
+                        "name": "Москва",
+                        "count": 3,
+                        "revenue": 2343
+                    },
+                    {
+                        "name": "Ростовская область",
+                        "count": 1,
+                        "revenue": 2182
+                    },
+                    {
+                        "name": "Санкт-Петербург",
+                        "count": 3,
+                        "revenue": 2125
+                    },
+                    {
+                        "name": "Оренбургская область",
+                        "count": 3,
+                        "revenue": 1907
+                    },
+                    {
+                        "name": "Республика Коми",
                         "count": 2,
-                        "revenue": 1911
+                        "revenue": 1491
                     },
                     {
                         "name": "Республика Бурятия",
@@ -966,87 +1048,62 @@
                         "revenue": 1268
                     },
                     {
-                        "name": "Оренбургская область",
-                        "count": 2,
-                        "revenue": 1268
-                    },
-                    {
-                        "name": "Московская область",
-                        "count": 2,
-                        "revenue": 1056
-                    },
-                    {
                         "name": "Владимирская область",
                         "count": 1,
                         "revenue": 950
                     },
                     {
-                        "name": "Санкт-Петербург",
+                        "name": "Иркутская область",
                         "count": 1,
-                        "revenue": 634
-                    },
-                    {
-                        "name": "Омская область",
-                        "count": 1,
-                        "revenue": 634
-                    },
-                    {
-                        "name": "Республика Крым",
-                        "count": 1,
-                        "revenue": 634
-                    },
-                    {
-                        "name": "Республика Саха (Якутия)",
-                        "count": 1,
-                        "revenue": 634
+                        "revenue": 852
                     }
                 ],
                 "sales_by_product": [
                     {
-                        "article": "SF0125",
-                        "count": 13,
-                        "revenue": 8242,
+                        "article": "SF0250",
+                        "count": 17,
+                        "revenue": 16609,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
-                                "count": 13,
-                                "revenue": 8242
+                                "count": 17,
+                                "revenue": 16609
                             }
                         ]
                     },
                     {
-                        "article": "SF0250",
-                        "count": 4,
-                        "revenue": 5108,
+                        "article": "SF0125",
+                        "count": 26,
+                        "revenue": 16476,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
-                                "count": 4,
-                                "revenue": 5108
+                                "count": 26,
+                                "revenue": 16476
                             }
                         ]
                     },
                     {
                         "article": "SM0125",
-                        "count": 1,
-                        "revenue": 2478,
+                        "count": 2,
+                        "revenue": 4975,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
-                                "count": 1,
-                                "revenue": 2478
+                                "count": 2,
+                                "revenue": 4975
                             }
                         ]
                     },
                     {
                         "article": "SF0500",
-                        "count": 1,
-                        "revenue": 1907,
+                        "count": 2,
+                        "revenue": 4089,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
-                                "count": 1,
-                                "revenue": 1907
+                                "count": 2,
+                                "revenue": 4089
                             }
                         ]
                     },
@@ -1075,8 +1132,8 @@
                         ]
                     }
                 ],
-                "redemptions_revenue": 13607.319999999998,
-                "redemptions_count": 27
+                "redemptions_revenue": 26872.120000000014,
+                "redemptions_count": 54
             },
             "ozon": {
                 "revenue": 0,
@@ -1088,30 +1145,30 @@
                 "redemptions_count": 0
             }
         },
-        "days_3": {
+        "days_7": {
             "wb": {
-                "revenue": 59461.899999999994,
-                "orders_count": 70,
+                "revenue": 113408.18000000001,
+                "orders_count": 139,
                 "sales_by_warehouse": [
                     {
                         "name": "Склад WB РФ",
-                        "count": 70,
-                        "revenue": 59461.899999999994,
+                        "count": 139,
+                        "revenue": 113408.18000000001,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 42,
-                                "revenue": 25766.9
+                                "count": 97,
+                                "revenue": 57642.17999999999
                             },
                             {
                                 "article": "SF0250",
-                                "count": 19,
-                                "revenue": 19163
+                                "count": 22,
+                                "revenue": 22994
                             },
                             {
                                 "article": "SF0500",
-                                "count": 4,
-                                "revenue": 7763
+                                "count": 15,
+                                "revenue": 26003
                             },
                             {
                                 "article": "SFS050",
@@ -1133,29 +1190,39 @@
                 ],
                 "sales_by_region": [
                     {
-                        "name": "Нижегородская область",
-                        "count": 6,
-                        "revenue": 6839
+                        "name": "Москва",
+                        "count": 22,
+                        "revenue": 16302
                     },
                     {
                         "name": "Московская область",
-                        "count": 7,
-                        "revenue": 5257
+                        "count": 12,
+                        "revenue": 10261
+                    },
+                    {
+                        "name": "Нижегородская область",
+                        "count": 8,
+                        "revenue": 9055
+                    },
+                    {
+                        "name": "Республика Коми",
+                        "count": 6,
+                        "revenue": 5697
                     },
                     {
                         "name": "Санкт-Петербург",
-                        "count": 4,
-                        "revenue": 4032
+                        "count": 5,
+                        "revenue": 5667
                     },
                     {
                         "name": "Самарская область",
-                        "count": 3,
-                        "revenue": 3831
+                        "count": 4,
+                        "revenue": 4412
                     },
                     {
-                        "name": "Москва",
-                        "count": 5,
-                        "revenue": 3501
+                        "name": "Краснодарский край",
+                        "count": 4,
+                        "revenue": 3227
                     },
                     {
                         "name": "Удмуртская Республика",
@@ -1163,85 +1230,75 @@
                         "revenue": 3057
                     },
                     {
-                        "name": "Краснодарский край",
+                        "name": "Камчатский край",
                         "count": 3,
+                        "revenue": 2795
+                    },
+                    {
+                        "name": "Ростовская область",
+                        "count": 2,
                         "revenue": 2763
+                    },
+                    {
+                        "name": "Оренбургская область",
+                        "count": 4,
+                        "revenue": 2488
+                    },
+                    {
+                        "name": "Калужская область",
+                        "count": 2,
+                        "revenue": 2487
+                    },
+                    {
+                        "name": "Ленинградская область",
+                        "count": 2,
+                        "revenue": 2487
+                    },
+                    {
+                        "name": "Республика Башкортостан",
+                        "count": 4,
+                        "revenue": 2371
                     },
                     {
                         "name": "Томская область",
                         "count": 2,
                         "revenue": 2346
-                    },
-                    {
-                        "name": "Ростовская область",
-                        "count": 1,
-                        "revenue": 2182
-                    },
-                    {
-                        "name": "Оренбургская область",
-                        "count": 3,
-                        "revenue": 1907
-                    },
-                    {
-                        "name": "Республика Башкортостан",
-                        "count": 3,
-                        "revenue": 1792
-                    },
-                    {
-                        "name": "Республика Коми",
-                        "count": 2,
-                        "revenue": 1491
-                    },
-                    {
-                        "name": "Республика Марий Эл",
-                        "count": 1,
-                        "revenue": 1277
-                    },
-                    {
-                        "name": "Республика Бурятия",
-                        "count": 1,
-                        "revenue": 1277
-                    },
-                    {
-                        "name": "Тульская область",
-                        "count": 2,
-                        "revenue": 1273
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0125",
-                        "count": 42,
-                        "revenue": 25766.9,
+                        "count": 97,
+                        "revenue": 57642.17999999999,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
-                                "count": 42,
-                                "revenue": 25766.9
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SF0250",
-                        "count": 19,
-                        "revenue": 19163,
-                        "by_warehouse": [
-                            {
-                                "name": "Склад WB РФ",
-                                "count": 19,
-                                "revenue": 19163
+                                "count": 97,
+                                "revenue": 57642.17999999999
                             }
                         ]
                     },
                     {
                         "article": "SF0500",
-                        "count": 4,
-                        "revenue": 7763,
+                        "count": 15,
+                        "revenue": 26003,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
-                                "count": 4,
-                                "revenue": 7763
+                                "count": 15,
+                                "revenue": 26003
+                            }
+                        ]
+                    },
+                    {
+                        "article": "SF0250",
+                        "count": 22,
+                        "revenue": 22994,
+                        "by_warehouse": [
+                            {
+                                "name": "Склад WB РФ",
+                                "count": 22,
+                                "revenue": 22994
                             }
                         ]
                     },
@@ -1282,215 +1339,8 @@
                         ]
                     }
                 ],
-                "redemptions_revenue": 39441.200000000004,
-                "redemptions_count": 78
-            },
-            "ozon": {
-                "revenue": 0,
-                "orders_count": 0,
-                "sales_by_warehouse": [],
-                "sales_by_region": [],
-                "sales_by_product": [],
-                "redemptions_revenue": 0,
-                "redemptions_count": 0
-            }
-        },
-        "days_7": {
-            "wb": {
-                "revenue": 140112.18,
-                "orders_count": 169,
-                "sales_by_warehouse": [
-                    {
-                        "name": "Склад WB РФ",
-                        "count": 169,
-                        "revenue": 140112.18,
-                        "by_product": [
-                            {
-                                "article": "SF0125",
-                                "count": 116,
-                                "revenue": 68623.18000000001
-                            },
-                            {
-                                "article": "SF0250",
-                                "count": 27,
-                                "revenue": 29379
-                            },
-                            {
-                                "article": "SF0500",
-                                "count": 19,
-                                "revenue": 32543
-                            },
-                            {
-                                "article": "SM0125",
-                                "count": 3,
-                                "revenue": 7142
-                            },
-                            {
-                                "article": "SFS050",
-                                "count": 3,
-                                "revenue": 1475
-                            },
-                            {
-                                "article": "SM0100",
-                                "count": 1,
-                                "revenue": 950
-                            }
-                        ]
-                    }
-                ],
-                "sales_by_region": [
-                    {
-                        "name": "Москва",
-                        "count": 26,
-                        "revenue": 19680
-                    },
-                    {
-                        "name": "Московская область",
-                        "count": 14,
-                        "revenue": 12119
-                    },
-                    {
-                        "name": "Нижегородская область",
-                        "count": 10,
-                        "revenue": 11803
-                    },
-                    {
-                        "name": "Санкт-Петербург",
-                        "count": 7,
-                        "revenue": 7883
-                    },
-                    {
-                        "name": "Республика Коми",
-                        "count": 6,
-                        "revenue": 5697
-                    },
-                    {
-                        "name": "Самарская область",
-                        "count": 4,
-                        "revenue": 4412
-                    },
-                    {
-                        "name": "Краснодарский край",
-                        "count": 5,
-                        "revenue": 3808
-                    },
-                    {
-                        "name": "Иркутская область",
-                        "count": 3,
-                        "revenue": 3764
-                    },
-                    {
-                        "name": "Ростовская область",
-                        "count": 3,
-                        "revenue": 3394
-                    },
-                    {
-                        "name": "Удмуртская Республика",
-                        "count": 2,
-                        "revenue": 3057
-                    },
-                    {
-                        "name": "Свердловская область",
-                        "count": 5,
-                        "revenue": 2956
-                    },
-                    {
-                        "name": "Камчатский край",
-                        "count": 3,
-                        "revenue": 2795
-                    },
-                    {
-                        "name": "Тюменская область",
-                        "count": 3,
-                        "revenue": 2497
-                    },
-                    {
-                        "name": "Оренбургская область",
-                        "count": 4,
-                        "revenue": 2488
-                    },
-                    {
-                        "name": "Калужская область",
-                        "count": 2,
-                        "revenue": 2487
-                    }
-                ],
-                "sales_by_product": [
-                    {
-                        "article": "SF0125",
-                        "count": 116,
-                        "revenue": 68623.18000000001,
-                        "by_warehouse": [
-                            {
-                                "name": "Склад WB РФ",
-                                "count": 116,
-                                "revenue": 68623.18000000001
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SF0500",
-                        "count": 19,
-                        "revenue": 32543,
-                        "by_warehouse": [
-                            {
-                                "name": "Склад WB РФ",
-                                "count": 19,
-                                "revenue": 32543
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SF0250",
-                        "count": 27,
-                        "revenue": 29379,
-                        "by_warehouse": [
-                            {
-                                "name": "Склад WB РФ",
-                                "count": 27,
-                                "revenue": 29379
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SM0125",
-                        "count": 3,
-                        "revenue": 7142,
-                        "by_warehouse": [
-                            {
-                                "name": "Склад WB РФ",
-                                "count": 3,
-                                "revenue": 7142
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SFS050",
-                        "count": 3,
-                        "revenue": 1475,
-                        "by_warehouse": [
-                            {
-                                "name": "Склад WB РФ",
-                                "count": 3,
-                                "revenue": 1475
-                            }
-                        ]
-                    },
-                    {
-                        "article": "SM0100",
-                        "count": 1,
-                        "revenue": 950,
-                        "by_warehouse": [
-                            {
-                                "name": "Склад WB РФ",
-                                "count": 1,
-                                "revenue": 950
-                            }
-                        ]
-                    }
-                ],
-                "redemptions_revenue": 93931.19999999998,
-                "redemptions_count": 170
+                "redemptions_revenue": 74388.22999999998,
+                "redemptions_count": 137
             },
             "ozon": {
                 "revenue": 0,
@@ -1504,18 +1354,18 @@
         },
         "days_30": {
             "wb": {
-                "revenue": 639642.3199999997,
-                "orders_count": 722,
+                "revenue": 618068.4999999998,
+                "orders_count": 701,
                 "sales_by_warehouse": [
                     {
                         "name": "Склад WB РФ",
-                        "count": 667,
-                        "revenue": 588267.2399999999,
+                        "count": 668,
+                        "revenue": 588906.2399999999,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 449,
-                                "revenue": 265268.9000000001
+                                "count": 450,
+                                "revenue": 265907.9000000001
                             },
                             {
                                 "article": "SF0250",
@@ -1556,35 +1406,30 @@
                     },
                     {
                         "name": "СК Воронеж",
-                        "count": 29,
-                        "revenue": 22407,
+                        "count": 18,
+                        "revenue": 13673,
                         "by_product": [
                             {
                                 "article": "SF0125",
-                                "count": 23,
-                                "revenue": 12570
+                                "count": 15,
+                                "revenue": 8741
                             },
                             {
                                 "article": "SF0500",
-                                "count": 6,
-                                "revenue": 9837
+                                "count": 3,
+                                "revenue": 4932
                             }
                         ]
                     },
                     {
                         "name": "Крыловская",
-                        "count": 13,
-                        "revenue": 16576.95,
+                        "count": 7,
+                        "revenue": 8317.95,
                         "by_product": [
                             {
-                                "article": "SF0125",
-                                "count": 6,
-                                "revenue": 3017.95
-                            },
-                            {
                                 "article": "SF0250",
-                                "count": 4,
-                                "revenue": 4898
+                                "count": 3,
+                                "revenue": 3877
                             },
                             {
                                 "article": "SF0500",
@@ -1592,27 +1437,17 @@
                                 "revenue": 3279
                             },
                             {
-                                "article": "SM0500",
-                                "count": 1,
-                                "revenue": 5382
+                                "article": "SF0125",
+                                "count": 2,
+                                "revenue": 1161.95
                             }
                         ]
                     },
                     {
                         "name": "Тюмень",
-                        "count": 6,
-                        "revenue": 6098.82,
+                        "count": 2,
+                        "revenue": 1900,
                         "by_product": [
-                            {
-                                "article": "SF0125",
-                                "count": 2,
-                                "revenue": 928.8199999999999
-                            },
-                            {
-                                "article": "SF0500",
-                                "count": 2,
-                                "revenue": 3270
-                            },
                             {
                                 "article": "SM0100",
                                 "count": 2,
@@ -1622,13 +1457,13 @@
                     },
                     {
                         "name": "Владимир",
-                        "count": 2,
-                        "revenue": 2352,
+                        "count": 1,
+                        "revenue": 1331,
                         "by_product": [
                             {
                                 "article": "SF0250",
-                                "count": 2,
-                                "revenue": 2352
+                                "count": 1,
+                                "revenue": 1331
                             }
                         ]
                     },
@@ -1684,23 +1519,23 @@
                 "sales_by_region": [
                     {
                         "name": "Москва",
-                        "count": 103,
-                        "revenue": 98743
+                        "count": 100,
+                        "revenue": 96180
                     },
                     {
                         "name": "Московская область",
-                        "count": 90,
-                        "revenue": 73447
+                        "count": 89,
+                        "revenue": 72983
                     },
                     {
                         "name": "Краснодарский край",
-                        "count": 41,
-                        "revenue": 34065
+                        "count": 40,
+                        "revenue": 33601
                     },
                     {
                         "name": "Санкт-Петербург",
-                        "count": 31,
-                        "revenue": 27603
+                        "count": 28,
+                        "revenue": 24366
                     },
                     {
                         "name": "Свердловская область",
@@ -1708,14 +1543,14 @@
                         "revenue": 19357
                     },
                     {
-                        "name": "Ростовская область",
-                        "count": 21,
-                        "revenue": 17678
-                    },
-                    {
                         "name": "Нижегородская область",
                         "count": 18,
                         "revenue": 17645
+                    },
+                    {
+                        "name": "Ростовская область",
+                        "count": 19,
+                        "revenue": 15022
                     },
                     {
                         "name": "Новосибирская область",
@@ -1728,14 +1563,9 @@
                         "revenue": 14146
                     },
                     {
-                        "name": "Воронежская область",
-                        "count": 12,
-                        "revenue": 14124
-                    },
-                    {
                         "name": "Самарская область",
-                        "count": 15,
-                        "revenue": 14007
+                        "count": 14,
+                        "revenue": 13543
                     },
                     {
                         "name": "Иркутская область",
@@ -1756,28 +1586,28 @@
                         "name": "Республика Саха (Якутия)",
                         "count": 10,
                         "revenue": 9698
+                    },
+                    {
+                        "name": "Калужская область",
+                        "count": 8,
+                        "revenue": 8889
                     }
                 ],
                 "sales_by_product": [
                     {
                         "article": "SF0125",
-                        "count": 483,
-                        "revenue": 283412.49000000005,
+                        "count": 470,
+                        "revenue": 277437.67000000004,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
-                                "count": 449,
-                                "revenue": 265268.9000000001
+                                "count": 450,
+                                "revenue": 265907.9000000001
                             },
                             {
                                 "name": "СК Воронеж",
-                                "count": 23,
-                                "revenue": 12570
-                            },
-                            {
-                                "name": "Крыловская",
-                                "count": 6,
-                                "revenue": 3017.95
+                                "count": 15,
+                                "revenue": 8741
                             },
                             {
                                 "name": "Астана Карагандинское шоссе",
@@ -1785,9 +1615,9 @@
                                 "revenue": 1162.82
                             },
                             {
-                                "name": "Тюмень",
+                                "name": "Крыловская",
                                 "count": 2,
-                                "revenue": 928.8199999999999
+                                "revenue": 1161.95
                             },
                             {
                                 "name": "Виртуальный Москва Пушкино",
@@ -1798,8 +1628,8 @@
                     },
                     {
                         "article": "SF0500",
-                        "count": 100,
-                        "revenue": 170944.16,
+                        "count": 95,
+                        "revenue": 162769.16,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
@@ -1808,25 +1638,20 @@
                             },
                             {
                                 "name": "СК Воронеж",
-                                "count": 6,
-                                "revenue": 9837
+                                "count": 3,
+                                "revenue": 4932
                             },
                             {
                                 "name": "Крыловская",
                                 "count": 2,
                                 "revenue": 3279
-                            },
-                            {
-                                "name": "Тюмень",
-                                "count": 2,
-                                "revenue": 3270
                             }
                         ]
                     },
                     {
                         "article": "SF0250",
-                        "count": 108,
-                        "revenue": 132163.90000000002,
+                        "count": 106,
+                        "revenue": 130121.90000000001,
                         "by_warehouse": [
                             {
                                 "name": "Склад WB РФ",
@@ -1835,13 +1660,13 @@
                             },
                             {
                                 "name": "Крыловская",
-                                "count": 4,
-                                "revenue": 4898
+                                "count": 3,
+                                "revenue": 3877
                             },
                             {
                                 "name": "Владимир",
-                                "count": 2,
-                                "revenue": 2352
+                                "count": 1,
+                                "revenue": 1331
                             },
                             {
                                 "name": "Актобе",
@@ -1909,18 +1734,6 @@
                         ]
                     },
                     {
-                        "article": "SM0500",
-                        "count": 1,
-                        "revenue": 5382,
-                        "by_warehouse": [
-                            {
-                                "name": "Крыловская",
-                                "count": 1,
-                                "revenue": 5382
-                            }
-                        ]
-                    },
-                    {
                         "article": "SFS050",
                         "count": 7,
                         "revenue": 4060.77,
@@ -1933,8 +1746,8 @@
                         ]
                     }
                 ],
-                "redemptions_revenue": 417637.5900000004,
-                "redemptions_count": 636
+                "redemptions_revenue": 408055.8200000004,
+                "redemptions_count": 620
             },
             "ozon": {
                 "revenue": 0,
