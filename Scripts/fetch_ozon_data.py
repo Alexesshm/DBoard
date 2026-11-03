@@ -164,115 +164,132 @@ def fetch_ozon_fbs_stocks():
 
 
 def fetch_ozon_orders():
-    """Fetch FBO orders for the last 30 days with region info.
-    
-    NOTE: Using v2 endpoint as per OZON documentation.
-    v3 was returning 404 - it's for FBS only.
-    Implements pagination to get all orders beyond the 1000 limit.
+    """Fetch FBO orders (sales) for the last 28 days with region info.
+
+    NOTE: v2/posting/fbo/list is obsolete (HTTP 400 "obsolete method cannot be
+    used"). Use POST /v3/posting/fbo/list with cursor pagination.
     """
-    url = "https://api-seller.ozon.ru/v2/posting/fbo/list"
+    url = "https://api-seller.ozon.ru/v3/posting/fbo/list"
     dt_now = datetime.now()
     dt_from = dt_now - timedelta(days=28)
-    
+
     all_orders = []
-    offset = 0
-    
+    cursor = ""
+
     while True:
         payload = {
-            "dir": "DESC",
             "filter": {
                 "since": dt_from.strftime('%Y-%m-%dT00:00:00.000Z'),
                 "to": dt_now.strftime('%Y-%m-%dT23:59:59.999Z'),
-                "status": ""
             },
             "limit": 1000,
-            "offset": offset,
+            "sort_dir": "asc",
+            "translit": False,
             "with": {
                 "analytics_data": True,
-                "financial_data": True
-            }
+                "financial_data": True,
+            },
         }
-        
+        if cursor:
+            payload["cursor"] = cursor
+
         try:
-            response = requests.post(url, json=payload, headers=HEADERS, timeout=30)
+            response = requests.post(url, json=payload, headers=HEADERS, timeout=60)
             response.raise_for_status()
-            result = response.json().get('result', [])
-            if isinstance(result, dict):
-                result = result.get('postings', [])
-            
-            if not result:
-                break
-            
-            all_orders.extend(result)
-            print(f"  ✓ orders page {offset // 1000 + 1}: {len(result)} items (total: {len(all_orders)})")
-            
-            if len(result) < 1000:
-                break  # Last page
-            
-            offset += 1000
-            
+            data = response.json()
         except requests.exceptions.HTTPError as e:
             print(f"Error fetching Ozon orders: HTTP {e.response.status_code} - {e.response.text[:200]}")
             break
         except Exception as e:
             print(f"Error fetching Ozon orders: {e}")
             break
-    
+
+        postings = data.get('postings', []) if isinstance(data, dict) else []
+        all_orders.extend(postings)
+        print(f"  ✓ orders page: {len(postings)} items (total: {len(all_orders)})")
+
+        has_next = data.get('has_next', False) if isinstance(data, dict) else False
+        cursor = data.get('cursor', '') if isinstance(data, dict) else ''
+        if not has_next or not cursor:
+            break
+
     print(f"  ✓ orders total: {len(all_orders)} orders")
     return all_orders
+
+
+def build_redemptions_from_orders(orders):
+    """Derive redemption rows from delivered FBO orders.
+
+    The finance transactions API (v3/finance/transaction/list) can return 404,
+    so redemptions ("выкупы") are derived from FBO postings with status
+    "delivered". Returns [{"operation_date", "amount"}, ...] compatible with the
+    finance transaction format used downstream.
+    """
+    redemptions = []
+    for order in orders:
+        status = (order.get('status') or '').lower()
+        if status not in ('delivered',):
+            continue
+        financial = order.get('financial_data') or {}
+        amount = 0.0
+        for product in financial.get('products', []) or []:
+            try:
+                amount += float(product.get('price', 0) or 0) * int(product.get('quantity', 1) or 1)
+            except (TypeError, ValueError):
+                pass
+        if amount <= 0:
+            continue
+        date_str = order.get('in_process_at') or order.get('created_at') or order.get('shipment_date')
+        redemptions.append({'operation_date': date_str, 'amount': amount})
+    return redemptions
 
 
 def fetch_ozon_fbs_orders():
     """Fetch FBS orders (sales from the seller's own warehouses) for the last 28 days.
 
-    Endpoint: POST /v3/posting/fbs/list
-    Mirrors fetch_ozon_orders() but for the FBS scheme.
+    Endpoint: POST /v4/posting/fbs/list (v3 returns 404).
     """
-    url = "https://api-seller.ozon.ru/v3/posting/fbs/list"
+    url = "https://api-seller.ozon.ru/v4/posting/fbs/list"
     dt_now = datetime.now()
     dt_from = dt_now - timedelta(days=28)
 
     all_orders = []
-    offset = 0
+    cursor = ""
 
     while True:
         payload = {
-            "dir": "DESC",
             "filter": {
                 "since": dt_from.strftime('%Y-%m-%dT00:00:00.000Z'),
                 "to": dt_now.strftime('%Y-%m-%dT23:59:59.999Z'),
             },
             "limit": 1000,
-            "offset": offset,
+            "sort_dir": "asc",
             "with": {
                 "analytics_data": True,
                 "financial_data": True,
             },
         }
+        if cursor:
+            payload["cursor"] = cursor
 
         try:
-            response = requests.post(url, json=payload, headers=HEADERS, timeout=30)
+            response = requests.post(url, json=payload, headers=HEADERS, timeout=60)
             response.raise_for_status()
-            result = response.json().get('result', [])
-            if isinstance(result, dict):
-                result = result.get('postings', [])
-
-            if not result:
-                break
-
-            all_orders.extend(result)
-            print(f"  ✓ FBS orders page {offset // 1000 + 1}: {len(result)} items (total: {len(all_orders)})")
-
-            if len(result) < 1000:
-                break
-
-            offset += 1000
-
+            data = response.json()
         except requests.exceptions.HTTPError as e:
             print(f"Error fetching Ozon FBS orders: HTTP {e.response.status_code} - {e.response.text[:200]}")
             break
         except Exception as e:
             print(f"Error fetching Ozon FBS orders: {e}")
+            break
+
+        postings = data.get('postings', []) if isinstance(data, dict) else []
+        all_orders.extend(postings)
+        print(f"  ✓ FBS orders page: {len(postings)} items (total: {len(all_orders)})")
+
+        has_next = data.get('has_next', False) if isinstance(data, dict) else False
+        cursor = data.get('cursor', '') if isinstance(data, dict) else ''
+        if not has_next or not cursor:
             break
 
     print(f"  ✓ FBS orders total: {len(all_orders)} orders")
@@ -811,7 +828,10 @@ if __name__ == "__main__":
     # Fetch finance transactions for accurate redemptions
     print("Fetching finance transactions...")
     finance_redemptions, all_transactions = fetch_ozon_finance_transactions()
-    print(f"  Found {len(finance_redemptions)} redemption transactions")
+    if not finance_redemptions:
+        print("  Finance API empty/error — deriving redemptions from delivered FBO orders")
+        finance_redemptions = build_redemptions_from_orders(orders)
+    print(f"  Found {len(finance_redemptions)} redemption rows")
     
     # Aggregate stocks by warehouse (DETAILED from analytics v2)
     stocks_warehouse_products, all_articles = aggregate_stocks_warehouse_products(fbo_analytics)
