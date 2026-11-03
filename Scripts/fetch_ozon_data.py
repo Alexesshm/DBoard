@@ -182,7 +182,7 @@ def fetch_ozon_orders():
                 "since": dt_from.strftime('%Y-%m-%dT00:00:00.000Z'),
                 "to": dt_now.strftime('%Y-%m-%dT23:59:59.999Z'),
             },
-            "limit": 1000,
+            "limit": 100,  # API allows at most 100 per page
             "sort_dir": "asc",
             "translit": False,
             "with": {
@@ -262,7 +262,7 @@ def fetch_ozon_fbs_orders():
                 "since": dt_from.strftime('%Y-%m-%dT00:00:00.000Z'),
                 "to": dt_now.strftime('%Y-%m-%dT23:59:59.999Z'),
             },
-            "limit": 1000,
+            "limit": 100,  # API allows at most 100 per page
             "sort_dir": "asc",
             "with": {
                 "analytics_data": True,
