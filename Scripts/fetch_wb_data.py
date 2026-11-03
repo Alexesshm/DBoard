@@ -309,7 +309,58 @@ def build_chrt_article_map(cards):
     return mapping
 
 
-def fetch_wb_fbs_stocks():
+def fetch_wb_chrt_map_from_analytics(orders):
+    """Fallback chrtID map when the Content API is not available (403).
+
+    The Content API (cards) requires the "Контент" token category. If it is
+    missing, the WB warehouses stock report still returns `chrtId` + `nmId`,
+    and supplier orders give us `nmId -> vendorCode`.
+    """
+    # nmId -> vendorCode from already-fetched orders
+    nm_to_article = {}
+    for order in (orders or []):
+        nm = order.get("nmId")
+        article = order.get("supplierArticle")
+        if nm is not None and article:
+            try:
+                nm_to_article[int(nm)] = article
+            except (TypeError, ValueError):
+                continue
+
+    url = f"{ANALYTICS_BASE}/api/analytics/v1/stocks-report/wb-warehouses"
+    headers = {"Authorization": WB_TOKEN, "Content-Type": "application/json"}
+    payload = {"limit": 250000}
+
+    try:
+        resp = requests.post(url, json=payload, headers=headers, timeout=120)
+        if resp.status_code != 200:
+            print(f"  wb-warehouses report: HTTP {resp.status_code} - {resp.text[:200]}")
+            return {}
+        data = resp.json()
+    except Exception as e:
+        print(f"  wb-warehouses report error: {e}")
+        return {}
+
+    items = (data.get("data", {}) or {}).get("items") if isinstance(data, dict) else None
+    if not items and isinstance(data, dict):
+        items = data.get("items", [])
+    items = items or []
+
+    mapping = {}
+    for item in items:
+        chrt = item.get("chrtId")
+        nm = item.get("nmId")
+        if chrt is None or nm is None:
+            continue
+        article = nm_to_article.get(int(nm))
+        if article:
+            mapping[int(chrt)] = {"article": article, "nmId": nm}
+
+    print(f"  ✓ chrtIds from wb-warehouses report: {len(mapping)}")
+    return mapping
+
+
+def fetch_wb_fbs_stocks(orders=None):
     """Fetch stocks from ALL seller own warehouses (FBS).
 
     Per WB docs the only way to get a per-warehouse detail for own warehouses is
@@ -329,6 +380,9 @@ def fetch_wb_fbs_stocks():
 
     cards = fetch_wb_cards()
     chrt_map = build_chrt_article_map(cards)
+    if not chrt_map:
+        print("  ⚠ Content API unavailable (cards), falling back to analytics report for chrtIds")
+        chrt_map = fetch_wb_chrt_map_from_analytics(orders)
     all_chrt_ids = list(chrt_map.keys())
     print(f"  Seller warehouses: {len(warehouses)}, chrtIds: {len(all_chrt_ids)}")
 
@@ -582,7 +636,7 @@ if __name__ == "__main__":
 
     # --- Own warehouses (FBS) ---
     print("\n--- Seller warehouses (FBS) ---")
-    fbs_stocks, seller_warehouses, seller_cards = fetch_wb_fbs_stocks()
+    fbs_stocks, seller_warehouses, seller_cards = fetch_wb_fbs_stocks(orders)
 
     # Aggregate stocks by warehouse (marketplace / FBW)
     stocks_by_warehouse = aggregate_stocks_by_warehouse(stocks, source='fbw')

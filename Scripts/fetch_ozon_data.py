@@ -830,16 +830,11 @@ if __name__ == "__main__":
     total_stock = sum(wh['total'] for wh in stocks_warehouse_products)
 
     # --- Seller own warehouses (FBS) ---
-    # Primary source: canonical per-warehouse FBS endpoint.
-    # Fallback: FBS rows from v4/product/info/stocks (already fetched above).
-    fbs_rows = fetch_ozon_fbs_stocks()
-    if fbs_rows:
-        fbs_warehouse_products, all_articles_fbs = aggregate_fbs_rows(fbs_rows, warehouses)
-        stocks_by_product_fbs = aggregate_fbs_rows_by_product(fbs_rows, warehouses)
-    else:
-        print("  ⚠ FBS endpoint returned no rows, falling back to v4 product/info/stocks")
-        fbs_warehouse_products, all_articles_fbs = aggregate_fbs_warehouse_products(stocks, warehouses)
-        stocks_by_product_fbs = aggregate_fbs_by_product(stocks, warehouses)
+    # v4/product/info/stocks (already fetched above) returns FBS rows per product.
+    # The /v2/product/info/stocks-by-warehouse/fbs endpoint requires explicit
+    # sku/offer_id values, so it cannot be used as a "list all" source.
+    fbs_warehouse_products, all_articles_fbs = aggregate_fbs_warehouse_products(stocks, warehouses)
+    stocks_by_product_fbs = aggregate_fbs_by_product(stocks, warehouses)
 
     stocks_by_warehouse_fbs = build_stocks_by_warehouse_fbs(fbs_warehouse_products)
     total_stock_fbs = sum(w['total'] for w in fbs_warehouse_products)
