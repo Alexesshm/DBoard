@@ -30,6 +30,23 @@ HEADERS = {
 }
 
 
+def _to_float(value):
+    """Coerce an Ozon price field (str | float | int | dict) to float."""
+    if value is None:
+        return 0.0
+    if isinstance(value, dict):
+        for key in ('amount', 'price', 'value'):
+            if key in value:
+                return _to_float(value[key])
+        return 0.0
+    if isinstance(value, str):
+        value = value.replace('\u00a0', '').replace(' ', '').replace(',', '.')
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def fetch_ozon_stocks():
     """Fetch current stock levels from Ozon.
     
@@ -230,13 +247,9 @@ def build_redemptions_from_orders(orders):
         status = (order.get('status') or '').lower()
         if status not in ('delivered',):
             continue
-        financial = order.get('financial_data') or {}
         amount = 0.0
-        for product in financial.get('products', []) or []:
-            try:
-                amount += float(product.get('price', 0) or 0) * int(product.get('quantity', 1) or 1)
-            except (TypeError, ValueError):
-                pass
+        for product in (order.get('products') or []):
+            amount += _to_float(product.get('price')) * int(product.get('quantity', 1) or 1)
         if amount <= 0:
             continue
         date_str = order.get('in_process_at') or order.get('created_at') or order.get('shipment_date')
@@ -458,10 +471,10 @@ def aggregate_orders_by_warehouse_and_region(orders):
         cluster_to = financial.get('cluster_to', '')
         city = analytics.get('city', '')
         
-        # Calculate order value
+        # Calculate order value (price x quantity from top-level products)
         total_price = 0
-        for prod in financial.get('products', []):
-            total_price += prod.get('price', 0) * prod.get('quantity', 1)
+        for prod in (order.get('products') or []):
+            total_price += _to_float(prod.get('price')) * int(prod.get('quantity', 1) or 1)
         
         # By warehouse (FBO)
         if wh_name not in by_warehouse:
@@ -502,7 +515,7 @@ def aggregate_sales_by_product(orders):
         
         for product in order.get('products', []):
             article = product.get('offer_id', 'Unknown')
-            price = float(product.get('price', 0))
+            price = _to_float(product.get('price'))
             qty = int(product.get('quantity', 1))
             revenue = price * qty
             

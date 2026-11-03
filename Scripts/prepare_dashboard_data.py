@@ -440,7 +440,7 @@ def aggregate_fbs_sales_data(sales_list):
         order_price = 0
         for prod in (item.get('products') or []):
             article = prod.get('offer_id', 'Unknown')
-            p_price = float(prod.get('price', 0) or 0)
+            p_price = _to_float(prod.get('price'))
             p_qty = int(prod.get('quantity', 1) or 1)
             p_revenue = p_price * p_qty
             order_price += p_revenue
@@ -610,6 +610,23 @@ def calculate_total_stocks_by_product(raw_stocks):
     return sorted_products
 
 
+def _to_float(value):
+    """Coerce an Ozon price field (str | float | int | dict) to float."""
+    if value is None:
+        return 0.0
+    if isinstance(value, dict):
+        for key in ('amount', 'price', 'value'):
+            if key in value:
+                return _to_float(value[key])
+        return 0.0
+    if isinstance(value, str):
+        value = value.replace('\u00a0', '').replace(' ', '').replace(',', '.')
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def aggregate_sales_data(sales_list, mp_type='wb'):
     """
     Aggregate sales data for a specific period.
@@ -635,10 +652,10 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
             financial = item.get('financial_data', {})
             analytics = item.get('analytics_data', {})
             
-            # Calculate price from products in order
+            # Calculate total order price from products (price x quantity)
             price = 0
-            for prod in financial.get('products', []):
-                price += prod.get('price', 0) * prod.get('quantity', 1)
+            for prod in item.get('products', []) or []:
+                price += _to_float(prod.get('price')) * int(prod.get('quantity', 1) or 1)
                 
             wh_name = analytics.get('warehouse_name', 'Unknown')
             
@@ -693,7 +710,7 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
                 # Wait, raw_orders has 'products' at top level? No, check fetch_ozon_orders.
                 # fetch_ozon_orders returns list of postings. Posting has 'products'.
                 p_article = prod.get('offer_id', 'Unknown')
-                p_price = float(prod.get('price', 0))
+                p_price = _to_float(prod.get('price'))
                 p_qty = int(prod.get('quantity', 1))
                 p_revenue = p_price * p_qty
                 
