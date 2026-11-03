@@ -2689,3 +2689,70 @@ body {
     color: rgba(255,255,255,0.5) !important;
     text-align: left !important;
 }
+
+/* ===== Stock source toggle (marketplace vs own warehouses) ===== */
+.stock-source-toggle {
+    display: inline-flex;
+    gap: 6px;
+    margin: 0 0 18px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.source-btn {
+    border: 0;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    background: transparent;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.source-btn:hover {
+    color: #fff;
+}
+
+.source-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+}
+
+/* Source separators inside the detail stocks table */
+.stock-source-separator td {
+    padding: 10px 12px !important;
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.source-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+}
+
+.market-source .source-badge {
+    background: rgba(124, 58, 237, 0.35);
+    border: 1px solid rgba(124, 58, 237, 0.6);
+}
+
+.own-source .source-badge {
+    background: rgba(14, 165, 233, 0.35);
+    border: 1px solid rgba(14, 165, 233, 0.6);
+}
+
+.source-total {
+    margin-left: 10px;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.55);
+}

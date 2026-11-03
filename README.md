@@ -2,6 +2,8 @@
 
 Дашборд для мониторинга продаж и остатков с маркетплейсов **Wildberries** и **Ozon**.
 
+Остатки можно смотреть в двух разрезах: **склады маркетплейса** (FBO/FBW) и **свои склады** (FBS) — переключатель «Склады маркетплейса / Мои склады (FBS)» над диаграммой. Свои склады также попадают в таблицу «Остатки», матрицу «Регионы» и «Мониторинг укомплектованности».
+
 ![Dashboard Preview](https://via.placeholder.com/800x400/050505/a855f7?text=DBoard+AI)
 
 ## 🚀 Быстрый старт
@@ -83,13 +85,28 @@ dashboard_data.json
 
 ## 🛠 API Endpoints
 
-### Wildberries
-- Stocks: `GET https://statistics-api.wildberries.ru/api/v1/supplier/stocks`
-- Sales: `GET https://statistics-api.wildberries.ru/api/v1/supplier/sales`
+### Wildberries — склады маркетплейса (FBW)
+- Остатки: `GET https://seller-analytics-api.wildberries.ru/api/v1/warehouse_remains` (задание → статус → download)
+- Продажи: `GET https://statistics-api.wildberries.ru/api/v1/supplier/sales`
+- Заказы: `GET https://statistics-api.wildberries.ru/api/v1/supplier/orders`
 
-### Ozon
-- Stocks: `POST https://api-seller.ozon.ru/v3/product/info/stocks`
-- Sales: `POST https://api-seller.ozon.ru/v2/analytics/data`
+### Wildberries — свои склады (FBS)
+- Список своих складов: `GET https://marketplace-api.wildberries.ru/api/v3/warehouses`
+- Остатки по складу: `POST https://marketplace-api.wildberries.ru/api/v3/stocks/{warehouseId}` (тело: `chrtIds`)
+- Сопоставление `chrtID → артикул`: `POST https://content-api.wildberries.ru/content/v2/get/cards/list`
+
+### Ozon — склады маркетплейса (FBO)
+- Остатки по складам: `POST https://api-seller.ozon.ru/v2/analytics/stock_on_warehouses`
+
+### Ozon — свои склады (FBS)
+- Остатки по складам продавца: `POST https://api-seller.ozon.ru/v2/product/info/stocks-by-warehouse/fbs`
+- Список складов: `POST https://api-seller.ozon.ru/v1/warehouse/list`
+
+### Ozon — продажи
+- Заказы: `POST https://api-seller.ozon.ru/v2/posting/fbo/list`
+- Финансы/выкупы: `POST https://api-seller.ozon.ru/v3/finance/transaction/list`
+
+> Для остатков на **своих** складах токен WB должен иметь категории «Маркетплейс» и «Контент»; ключ Ozon — доступ к ценам и остаткам.
 
 ---
 

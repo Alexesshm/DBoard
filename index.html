@@ -81,6 +81,10 @@
         <section class="chart-section reveal">
             <h2 id="chartTitle">📊 Остатки по складам и товарам</h2>
             <p class="section-subtitle" id="chartSubtitle">Каждый столбец — склад, цвета — товары (артикулы)</p>
+            <div class="stock-source-toggle" id="stockSourceToggle">
+                <button class="source-btn active" data-source="marketplace" onclick="switchStockSource('marketplace')">Склады маркетплейса</button>
+                <button class="source-btn" data-source="own" onclick="switchStockSource('own')">Мои склады (FBS)</button>
+            </div>
             <div class="chart-container">
                 <canvas id="stocksChart"></canvas>
             </div>

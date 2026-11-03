@@ -14,6 +14,19 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 EXECUTIONS_DIR = os.path.join(PROJECT_DIR, 'Executions')
 
+# Virtual/transit rows returned by WB warehouse reports. They are aggregates,
+# not real warehouses, and must never be counted as a warehouse (otherwise
+# product totals are doubled).
+VIRTUAL_WAREHOUSES = {
+    'в пути до получателей',
+    'в пути возвраты на склад wb',
+    'всего находится на складах',
+    'итого на складах',
+    'в пути к покупателю',
+    'в пути на склад',
+    'в пути',
+}
+
 
 def load_json(filename):
     """Load JSON file from Executions directory."""
@@ -209,6 +222,68 @@ def get_warehouse_cluster(warehouse_name, mp_type='wb'):
     return 'Прочие'
 
 
+def build_chart_data(stocks_wp, all_articles, mp_type='wb', single_cluster=False):
+    """Build Chart.js-ready stacked data with cluster grouping.
+
+    single_cluster=True puts every warehouse into one "Мои склады" group —
+    used for the seller's own warehouses (FBS), where marketplace region
+    clusters do not apply.
+    """
+    if not stocks_wp or not all_articles:
+        return None
+
+    from collections import defaultdict
+
+    if single_cluster:
+        clustered_warehouses = {'Мои склады': list(stocks_wp)}
+        sorted_clusters = ['Мои склады']
+    else:
+        clustered_warehouses = defaultdict(list)
+        for wh in stocks_wp:
+            clustered_warehouses[get_warehouse_cluster(wh['name'], mp_type)].append(wh)
+
+        if mp_type == 'wb':
+            priority_clusters = ['Центральный', 'Северо-Западный', 'Приволжский', 'Уральский']
+        else:
+            priority_clusters = ['Москва, МО и Дальние регионы', 'Санкт-Петербург и СЗО', 'Казань', 'Краснодар']
+
+        sorted_clusters = [pc for pc in priority_clusters if pc in clustered_warehouses]
+        sorted_clusters += sorted(c for c in clustered_warehouses if c not in priority_clusters)
+
+    chart = {'labels': [], 'datasets': [], 'clusters': []}
+
+    for cluster_name in sorted_clusters:
+        warehouses = clustered_warehouses[cluster_name]
+        total_stock = sum(sum(wh.get('products', {}).values()) for wh in warehouses)
+        start = len(chart['labels'])
+        for wh in warehouses:
+            chart['labels'].append(wh['name'])
+        chart['clusters'].append({
+            'name': cluster_name,
+            'start_index': start,
+            'end_index': len(chart['labels']) - 1,
+            'warehouse_count': len(warehouses),
+            'total_stock': total_stock,
+        })
+
+    for article in all_articles:
+        color = get_article_color(article)
+        data = []
+        for cluster_name in sorted_clusters:
+            for wh in clustered_warehouses[cluster_name]:
+                data.append(wh.get('products', {}).get(article, 0))
+        if any(d > 0 for d in data):
+            chart['datasets'].append({
+                'label': article,
+                'data': data,
+                'backgroundColor': color,
+                'borderColor': '#1a1a1a',
+                'borderWidth': 1,
+            })
+
+    return chart
+
+
 def parse_date(date_str):
     """Parse date string to datetime object."""
     if not date_str:
@@ -233,7 +308,11 @@ def calculate_total_stocks_by_product(raw_stocks):
         article = item.get('supplierArticle', 'Unknown')
         qty = item.get('quantity', 0)  # Остатки, доступные для заказа
         warehouse = item.get('warehouseName', 'Unknown')
-        
+
+        # Never count virtual/transit rows — they duplicate real warehouses
+        if warehouse.lower() in VIRTUAL_WAREHOUSES:
+            continue
+
         if article not in products:
             products[article] = {
                 'article': article,
@@ -428,6 +507,8 @@ def prepare():
     if wb_data:
         # Stocks (No changes, take from raw)
         dashboard["summary"]["wb_stocks"] = wb_data.get('total_stock_value', 0)
+        dashboard["summary"]["wb_stocks_fbo"] = wb_data.get('total_stock_value', 0)
+        dashboard["summary"]["wb_stocks_fbs"] = wb_data.get('total_stock_fbs', 0)
         
         # Save structured stocks data
         dashboard["stocks"]["wb"] = {
@@ -515,6 +596,22 @@ def prepare():
         
         dashboard["stocks"]["wb"]["chart_data"] = wb_chart_data
 
+        # Seller own warehouses (FBS) — a separate "Мои склады" source.
+        # These never fall into marketplace region clusters, so one synthetic
+        # cluster is used for the chart.
+        wb_by_product_fbs = calculate_total_stocks_by_product(wb_data.get('raw_stocks_fbs', []))
+        for item in wb_by_product_fbs:
+            item['color'] = get_article_color(item.get('article', ''))
+        dashboard["stocks"]["wb"]["by_warehouse_fbs"] = wb_data.get('stocks_by_warehouse_fbs', [])[:15]
+        dashboard["stocks"]["wb"]["by_product_fbs"] = wb_by_product_fbs
+        dashboard["stocks"]["wb"]["chart_data_fbs"] = build_chart_data(
+            wb_data.get('stocks_warehouse_products_fbs'),
+            wb_data.get('all_articles_fbs'),
+            'wb',
+            single_cluster=True,
+        )
+        dashboard["stocks"]["wb"]["all_articles_fbs"] = wb_data.get('all_articles_fbs', [])
+
         # Sales (Orders) Processing Per Period
         raw_orders = wb_data.get('raw_orders', [])
         
@@ -577,6 +674,8 @@ def prepare():
     if ozon_data:
         # Stocks
         dashboard["summary"]["ozon_stocks"] = ozon_data.get('total_stock_value', 0)
+        dashboard["summary"]["ozon_stocks_fbo"] = ozon_data.get('total_stock_value', 0)
+        dashboard["summary"]["ozon_stocks_fbs"] = ozon_data.get('total_stock_fbs', 0)
         
         # Save structured stocks data
         # Note: ozon_raw_data has 'stocks_warehouse_products' and 'stocks_by_product' pre-calculated
@@ -662,6 +761,20 @@ def prepare():
         
         dashboard["stocks"]["ozon"]["chart_data"] = ozon_chart_data
 
+        # Seller own warehouses (FBS) — a separate "Мои склады" source
+        ozon_by_product_fbs = ozon_data.get('stocks_by_product_fbs', [])
+        for item in ozon_by_product_fbs:
+            item['color'] = get_article_color(item.get('article', ''))
+        dashboard["stocks"]["ozon"]["by_warehouse_fbs"] = ozon_data.get('stocks_by_warehouse_fbs', [])[:15]
+        dashboard["stocks"]["ozon"]["by_product_fbs"] = ozon_by_product_fbs
+        dashboard["stocks"]["ozon"]["chart_data_fbs"] = build_chart_data(
+            ozon_data.get('stocks_warehouse_products_fbs'),
+            ozon_data.get('all_articles_fbs'),
+            'ozon',
+            single_cluster=True,
+        )
+        dashboard["stocks"]["ozon"]["all_articles_fbs"] = ozon_data.get('all_articles_fbs', [])
+
         # Sales Processing Per Period
         raw_orders = ozon_data.get('raw_orders', [])
         
@@ -724,7 +837,12 @@ def prepare():
     today_wb = dashboard["period_data"]["today"].get("wb", {})
     today_ozon = dashboard["period_data"]["today"].get("ozon", {})
     
-    dashboard["summary"]["total_stocks"] = dashboard["summary"]["wb_stocks"] + dashboard["summary"]["ozon_stocks"]
+    dashboard["summary"]["total_stocks"] = (
+        dashboard["summary"]["wb_stocks"]
+        + dashboard["summary"]["ozon_stocks"]
+        + dashboard["summary"].get("wb_stocks_fbs", 0)
+        + dashboard["summary"].get("ozon_stocks_fbs", 0)
+    )
     dashboard["summary"]["total_sales_today"] = today_wb.get("revenue", 0) + today_ozon.get("revenue", 0)
     
     # Marketplaces array for initial render

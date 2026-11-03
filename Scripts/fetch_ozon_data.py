@@ -100,6 +100,69 @@ def fetch_ozon_fbo_stocks():
         return []
 
 
+def fetch_ozon_fbs_stocks():
+    """Fetch stock on the seller's OWN warehouses (FBS / rFBS / FBP).
+
+    Canonical endpoint: POST /v2/product/info/stocks-by-warehouse/fbs
+    (v1 was disabled on 07.04.2026).
+
+    Returns a flat list of rows:
+      [{"article", "warehouse_id", "warehouse_name", "quantity"}, ...]
+    The response shape has changed between API revisions, so parsing is
+    defensive: both `result`-wrapped and top-level payloads are accepted.
+    """
+    url = "https://api-seller.ozon.ru/v2/product/info/stocks-by-warehouse/fbs"
+    rows = []
+    cursor = ""
+
+    for _page in range(200):
+        payload = {"limit": 1000}
+        if cursor:
+            payload["cursor"] = cursor
+
+        try:
+            response = requests.post(url, json=payload, headers=HEADERS, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+        except requests.exceptions.HTTPError as e:
+            print(f"Error fetching Ozon FBS stocks: HTTP {e.response.status_code}")
+            try:
+                print(f"  Response: {e.response.text[:200]}")
+            except Exception:
+                pass
+            break
+        except Exception as e:
+            print(f"Error fetching Ozon FBS stocks: {e}")
+            break
+
+        result = data.get('result', data) if isinstance(data, dict) else {}
+        products = result.get('products', []) if isinstance(result, dict) else []
+
+        for prod in products:
+            article = prod.get('offer_id') or prod.get('sku') or 'Unknown'
+            # Per-warehouse breakdown may live in `stocks` or `warehouses`
+            for key in ('stocks', 'warehouses'):
+                for st in (prod.get(key) or []):
+                    if not isinstance(st, dict):
+                        continue
+                    qty = st.get('present', st.get('quantity', st.get('amount')))
+                    if qty is None:
+                        continue
+                    rows.append({
+                        'article': article,
+                        'warehouse_id': st.get('warehouse_id', st.get('warehouseId')),
+                        'warehouse_name': st.get('warehouse_name', st.get('warehouseName')),
+                        'quantity': int(qty or 0),
+                    })
+
+        cursor = result.get('cursor', '') if isinstance(result, dict) else ''
+        if not (isinstance(result, dict) and result.get('has_next')) or not cursor:
+            break
+
+    print(f"  ✓ FBS (own warehouses) rows: {len(rows)}")
+    return rows
+
+
 def fetch_ozon_orders():
     """Fetch FBO orders for the last 30 days with region info.
     
@@ -513,6 +576,168 @@ def aggregate_stocks_warehouse_products(fbo_analytics):
     return result, sorted(list(all_articles))
 
 
+def _is_fbs_type(stock_type):
+    """Return True if the stock row belongs to a seller own warehouse (FBS/rFBS/FBP)."""
+    return (stock_type or '').lower() != 'fbo'
+
+
+def _resolve_ozon_warehouse_name(stock, wh_map):
+    """Resolve a readable warehouse name for an Ozon stock row."""
+    wh_id = str(stock.get('warehouse_id', '') or '')
+    return (stock.get('warehouse_name') or wh_map.get(wh_id)
+            or (f'Склад {wh_id}' if wh_id else 'Склад продавца'))
+
+
+def aggregate_fbs_warehouse_products(stocks, warehouses):
+    """Aggregate seller own warehouse (FBS) stocks by warehouse AND product.
+
+    Input is the v4/product/info/stocks `items` list; each item has a `stocks`
+    array with `type` (fbo/fbs/rfbs/fbp), `present` and `warehouse_id`.
+    FBO rows are skipped here because FBO comes from the analytics endpoint.
+    """
+    wh_map = {str(wh.get('warehouse_id', wh.get('id', ''))): wh.get('name', 'Unknown')
+              for wh in warehouses}
+    warehouse_data = {}
+    all_articles = set()
+
+    for item in stocks:
+        article = item.get('offer_id', 'Unknown')
+        for stock in item.get('stocks', []) or []:
+            if not _is_fbs_type(stock.get('type')):
+                continue
+            qty = int(stock.get('present', 0) or 0)
+            if qty <= 0:
+                continue
+            wh_name = _resolve_ozon_warehouse_name(stock, wh_map)
+            wh_id = str(stock.get('warehouse_id', '') or '')
+            all_articles.add(article)
+            if wh_name not in warehouse_data:
+                warehouse_data[wh_name] = {
+                    'name': wh_name,
+                    'warehouse_id': wh_id,
+                    'total': 0,
+                    'products': {},
+                    'source': 'fbs',
+                }
+            warehouse_data[wh_name]['products'][article] = \
+                warehouse_data[wh_name]['products'].get(article, 0) + qty
+            warehouse_data[wh_name]['total'] += qty
+
+    result = sorted(warehouse_data.values(), key=lambda x: x['total'], reverse=True)
+    return result, sorted(all_articles)
+
+
+def aggregate_fbs_rows(rows, warehouses):
+    """Aggregate a flat FBS row list into (warehouse-products, all_articles)."""
+    wh_map = {str(wh.get('warehouse_id', wh.get('id', ''))): wh.get('name', 'Unknown')
+              for wh in warehouses}
+    warehouse_data = {}
+    all_articles = set()
+
+    for row in rows:
+        qty = int(row.get('quantity', 0) or 0)
+        if qty <= 0:
+            continue
+        article = row.get('article', 'Unknown')
+        wh_id = str(row.get('warehouse_id', '') or '')
+        wh_name = (row.get('warehouse_name') or wh_map.get(wh_id)
+                   or (f'Склад {wh_id}' if wh_id else 'Склад продавца'))
+        all_articles.add(article)
+        if wh_name not in warehouse_data:
+            warehouse_data[wh_name] = {
+                'name': wh_name,
+                'warehouse_id': wh_id,
+                'total': 0,
+                'products': {},
+                'source': 'fbs',
+            }
+        warehouse_data[wh_name]['products'][article] = \
+            warehouse_data[wh_name]['products'].get(article, 0) + qty
+        warehouse_data[wh_name]['total'] += qty
+
+    result = sorted(warehouse_data.values(), key=lambda x: x['total'], reverse=True)
+    return result, sorted(all_articles)
+
+
+def aggregate_fbs_rows_by_product(rows, warehouses):
+    """Aggregate a flat FBS row list by product with warehouse breakdown."""
+    wh_map = {str(wh.get('warehouse_id', wh.get('id', ''))): wh.get('name', 'Unknown')
+              for wh in warehouses}
+    products = {}
+
+    for row in rows:
+        qty = int(row.get('quantity', 0) or 0)
+        if qty <= 0:
+            continue
+        article = row.get('article', 'Unknown')
+        wh_id = str(row.get('warehouse_id', '') or '')
+        wh_name = (row.get('warehouse_name') or wh_map.get(wh_id)
+                   or (f'Склад {wh_id}' if wh_id else 'Склад продавца'))
+        p = products.setdefault(article, {'article': article, 'quantity': 0, 'warehouses': {}})
+        p['quantity'] += qty
+        p['warehouses'][wh_name] = p['warehouses'].get(wh_name, 0) + qty
+
+    result = []
+    for article, data in products.items():
+        by_warehouse = sorted(
+            [{'name': n, 'quantity': q} for n, q in data['warehouses'].items()],
+            key=lambda x: x['quantity'], reverse=True,
+        )
+        result.append({
+            'article': article,
+            'quantity': data['quantity'],
+            'warehouses_count': len(by_warehouse),
+            'by_warehouse': by_warehouse,
+            'source': 'fbs',
+        })
+    return sorted(result, key=lambda x: x['quantity'], reverse=True)
+
+
+def build_stocks_by_warehouse_fbs(stocks_warehouse_products_fbs):
+    """Convert the FBS chart structure into the by_warehouse list format."""
+    return [{
+        'name': w['name'],
+        'warehouse_id': w.get('warehouse_id') or w['name'],
+        'quantity': w['total'],
+        'items_count': len(w['products']),
+        'source': 'fbs',
+    } for w in stocks_warehouse_products_fbs]
+
+
+def aggregate_fbs_by_product(stocks, warehouses):
+    """Aggregate seller own warehouse (FBS) stocks by product with warehouse breakdown."""
+    wh_map = {str(wh.get('warehouse_id', wh.get('id', ''))): wh.get('name', 'Unknown')
+              for wh in warehouses}
+    products = {}
+    for item in stocks:
+        article = item.get('offer_id', 'Unknown')
+        for stock in item.get('stocks', []) or []:
+            if not _is_fbs_type(stock.get('type')):
+                continue
+            qty = int(stock.get('present', 0) or 0)
+            if qty <= 0:
+                continue
+            wh_name = _resolve_ozon_warehouse_name(stock, wh_map)
+            p = products.setdefault(article, {'article': article, 'quantity': 0, 'warehouses': {}})
+            p['quantity'] += qty
+            p['warehouses'][wh_name] = p['warehouses'].get(wh_name, 0) + qty
+
+    result = []
+    for article, data in products.items():
+        by_warehouse = sorted(
+            [{'name': n, 'quantity': q} for n, q in data['warehouses'].items()],
+            key=lambda x: x['quantity'], reverse=True,
+        )
+        result.append({
+            'article': article,
+            'quantity': data['quantity'],
+            'warehouses_count': len(by_warehouse),
+            'by_warehouse': by_warehouse,
+            'source': 'fbs',
+        })
+    return sorted(result, key=lambda x: x['quantity'], reverse=True)
+
+
 if __name__ == "__main__":
     print("Fetching Ozon data...")
     
@@ -540,10 +765,26 @@ if __name__ == "__main__":
             'name': wh['name'],
             'warehouse_id': wh['name'], # Name as ID for Ozon analytics
             'quantity': wh['total'],
-            'items_count': len(wh['products'])
+            'items_count': len(wh['products']),
+            'source': 'fbo',
         })
         
     total_stock = sum(wh['total'] for wh in stocks_warehouse_products)
+
+    # --- Seller own warehouses (FBS) ---
+    # Primary source: canonical per-warehouse FBS endpoint.
+    # Fallback: FBS rows from v4/product/info/stocks (already fetched above).
+    fbs_rows = fetch_ozon_fbs_stocks()
+    if fbs_rows:
+        fbs_warehouse_products, all_articles_fbs = aggregate_fbs_rows(fbs_rows, warehouses)
+        stocks_by_product_fbs = aggregate_fbs_rows_by_product(fbs_rows, warehouses)
+    else:
+        print("  ⚠ FBS endpoint returned no rows, falling back to v4 product/info/stocks")
+        fbs_warehouse_products, all_articles_fbs = aggregate_fbs_warehouse_products(stocks, warehouses)
+        stocks_by_product_fbs = aggregate_fbs_by_product(stocks, warehouses)
+
+    stocks_by_warehouse_fbs = build_stocks_by_warehouse_fbs(fbs_warehouse_products)
+    total_stock_fbs = sum(w['total'] for w in fbs_warehouse_products)
     
     # Aggregate orders by warehouse and region
     sales_by_warehouse, sales_by_region = aggregate_orders_by_warehouse_and_region(orders)
@@ -575,6 +816,12 @@ if __name__ == "__main__":
         "stocks_by_warehouse": stocks_by_warehouse,
         "stocks_warehouse_products": stocks_warehouse_products,
         "all_articles": all_articles,
+        "stocks_by_warehouse_fbs": stocks_by_warehouse_fbs,
+        "stocks_warehouse_products_fbs": fbs_warehouse_products,
+        "stocks_by_product_fbs": stocks_by_product_fbs,
+        "all_articles_fbs": all_articles_fbs,
+        "total_stock_fbo": total_stock,
+        "total_stock_fbs": total_stock_fbs,
         "sales_by_warehouse": sales_by_warehouse,
         "sales_by_region": sales_by_region,
         "sales_by_product": sales_by_product,
@@ -591,6 +838,7 @@ if __name__ == "__main__":
     
     print(f"Ozon data saved: {len(stocks)} products, {len(orders)} orders")
     print(f"Total FBO stock: {total_stock} units across {len(stocks_warehouse_products)} warehouses")
+    print(f"Total FBS (own) stock: {total_stock_fbs} units across {len(fbs_warehouse_products)} warehouses")
     print(f"Total sales (7 days): {total_sales_value:.2f} RUB, {len(orders)} orders")
     
     if sales_by_product:

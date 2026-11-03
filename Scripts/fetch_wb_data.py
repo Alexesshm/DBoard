@@ -26,6 +26,8 @@ WB_TOKEN = os.getenv('WB_API_TOKEN')
 # Base URLs
 STATS_BASE = "https://statistics-api.wildberries.ru"
 ANALYTICS_BASE = "https://seller-analytics-api.wildberries.ru"
+MARKETPLACE_BASE = "https://marketplace-api.wildberries.ru"
+CONTENT_BASE = "https://content-api.wildberries.ru"
 
 # Rate limit settings for statistics API (orders/sales)
 MAX_RETRIES = 5
@@ -226,8 +228,163 @@ def fetch_wb_sales():
     return fetch_with_retry(url, params, headers, "sales")
 
 
-def aggregate_stocks_by_warehouse(stocks):
-    """Aggregate stocks by warehouse (FBW warehouses), excluding virtual entries."""
+def fetch_wb_seller_warehouses():
+    """Get the list of the seller's OWN warehouses (FBS/DBS/DBW).
+
+    Endpoint: GET https://marketplace-api.wildberries.ru/api/v3/warehouses
+    Items look like: {"id": 12345, "name": "...", "officeId": 15, "deliveryType": 1}.
+    """
+    url = f"{MARKETPLACE_BASE}/api/v3/warehouses"
+    headers = {"Authorization": WB_TOKEN}
+    data = fetch_with_retry(url, None, headers, "seller-warehouses")
+    return data if isinstance(data, list) else []
+
+
+def fetch_wb_cards():
+    """Get all product cards with sizes (chrtID) so chrtID can be mapped to vendorCode.
+
+    Endpoint: POST https://content-api.wildberries.ru/content/v2/get/cards/list
+    """
+    url = f"{CONTENT_BASE}/content/v2/get/cards/list?locale=ru"
+    headers = {"Authorization": WB_TOKEN, "Content-Type": "application/json"}
+    cards = []
+    cursor = {"limit": 100}
+    seen_signatures = set()
+
+    for _page in range(500):
+        signature = (cursor.get("updatedAt"), cursor.get("nmID"))
+        if signature in seen_signatures:
+            break
+        seen_signatures.add(signature)
+
+        payload = {
+            "settings": {
+                "sort": {"ascending": False},
+                "filter": {"withPhoto": -1},
+                "cursor": cursor,
+            }
+        }
+
+        data = None
+        for _attempt in range(3):
+            try:
+                resp = requests.post(url, json=payload, headers=headers, timeout=60)
+                if resp.status_code == 429:
+                    print("  cards: rate limited, waiting 5s...")
+                    time.sleep(5)
+                    continue
+                resp.raise_for_status()
+                data = resp.json()
+                break
+            except Exception as e:
+                print(f"  Error fetching cards: {e}")
+                data = None
+                break
+
+        if data is None:
+            break
+
+        page = data.get("cards", [])
+        cards.extend(page)
+        cur = data.get("cursor", {}) or {}
+        limit = cursor.get("limit", 100)
+        if len(page) < limit:
+            break
+        cursor = {"limit": limit, "updatedAt": cur.get("updatedAt"), "nmID": cur.get("nmID")}
+
+    print(f"  ✓ cards: {len(cards)} items")
+    return cards
+
+
+def build_chrt_article_map(cards):
+    """Build chrtID -> {"article": vendorCode, "nmId": nmID} lookup from cards."""
+    mapping = {}
+    for card in cards:
+        article = card.get("vendorCode", "Unknown")
+        nm_id = card.get("nmID")
+        for size in card.get("sizes", []) or []:
+            chrt = size.get("chrtID")
+            if chrt is not None:
+                mapping[int(chrt)] = {"article": article, "nmId": nm_id}
+    return mapping
+
+
+def fetch_wb_fbs_stocks():
+    """Fetch stocks from ALL seller own warehouses (FBS).
+
+    Per WB docs the only way to get a per-warehouse detail for own warehouses is
+    POST https://marketplace-api.wildberries.ru/api/v3/stocks/{warehouseId}
+    with an explicit list of chrtIds (size IDs). We collect chrtIds from the
+    product cards and query every own warehouse.
+
+    Returns:
+      flat_stocks: list of {"supplierArticle", "warehouseName", "quantity", "source"}
+      warehouses:  the seller warehouse list
+      cards:       the product cards (for diagnostics)
+    """
+    warehouses = fetch_wb_seller_warehouses()
+    if not warehouses:
+        print("  ⚠ No seller warehouses found — FBS stocks will be empty")
+        return [], [], []
+
+    cards = fetch_wb_cards()
+    chrt_map = build_chrt_article_map(cards)
+    all_chrt_ids = list(chrt_map.keys())
+    print(f"  Seller warehouses: {len(warehouses)}, chrtIds: {len(all_chrt_ids)}")
+
+    flat = []
+    headers = {"Authorization": WB_TOKEN, "Content-Type": "application/json"}
+    for wh in warehouses:
+        wh_id = wh.get("id")
+        wh_name = wh.get("name") or f"Склад {wh_id}"
+        if wh_id is None:
+            continue
+
+        # API accepts up to 1000 chrtIds per request
+        for i in range(0, len(all_chrt_ids), 1000):
+            chunk = all_chrt_ids[i:i + 1000]
+            if not chunk:
+                continue
+            try:
+                resp = requests.post(
+                    f"{MARKETPLACE_BASE}/api/v3/stocks/{wh_id}",
+                    json={"chrtIds": chunk},
+                    headers=headers,
+                    timeout=60,
+                )
+                if resp.status_code == 429:
+                    print(f"  [{wh_name}] rate limited, waiting 5s...")
+                    time.sleep(5)
+                    resp = requests.post(
+                        f"{MARKETPLACE_BASE}/api/v3/stocks/{wh_id}",
+                        json={"chrtIds": chunk},
+                        headers=headers,
+                        timeout=60,
+                    )
+                resp.raise_for_status()
+                stocks = resp.json().get("stocks", []) or []
+            except Exception as e:
+                print(f"  FBS stocks error for {wh_name}: {e}")
+                continue
+
+            for s in stocks:
+                chrt = s.get("chrtId")
+                amount = int(s.get("amount", 0) or 0)
+                info = chrt_map.get(int(chrt)) if chrt is not None else None
+                article = info["article"] if info else (f"chrt{chrt}" if chrt is not None else "Unknown")
+                flat.append({
+                    "supplierArticle": article,
+                    "warehouseName": wh_name,
+                    "quantity": amount,
+                    "source": "fbs",
+                })
+
+    print(f"  ✓ FBS stock rows: {len(flat)}")
+    return flat, warehouses, cards
+
+
+def aggregate_stocks_by_warehouse(stocks, source='fbw'):
+    """Aggregate stocks by warehouse, excluding virtual entries."""
     warehouses = {}
     for item in stocks:
         wh_name = item.get('warehouseName', 'Unknown')
@@ -242,7 +399,8 @@ def aggregate_stocks_by_warehouse(stocks):
             warehouses[wh_name] = {
                 'name': wh_name,
                 'quantity': 0,
-                'items_count': 0
+                'items_count': 0,
+                'source': source,
             }
         warehouses[wh_name]['quantity'] += qty
         warehouses[wh_name]['items_count'] += 1
@@ -251,7 +409,42 @@ def aggregate_stocks_by_warehouse(stocks):
     return sorted_warehouses
 
 
-def aggregate_stocks_by_warehouse_and_product(stocks):
+def aggregate_stocks_by_product(stocks, source='fbw'):
+    """Aggregate stocks by product (supplierArticle) with per-warehouse breakdown."""
+    products = {}
+    for item in stocks:
+        article = item.get('supplierArticle', 'Unknown')
+        wh_name = item.get('warehouseName', 'Unknown')
+        qty = item.get('quantity', 0)
+
+        # Skip virtual warehouses and zero rows
+        if wh_name.lower() in VIRTUAL_WAREHOUSES or qty <= 0:
+            continue
+
+        if article not in products:
+            products[article] = {'article': article, 'quantity': 0, 'warehouses': {}}
+        products[article]['quantity'] += qty
+        products[article]['warehouses'][wh_name] = products[article]['warehouses'].get(wh_name, 0) + qty
+
+    result = []
+    for article, data in products.items():
+        by_warehouse = sorted(
+            [{'name': name, 'quantity': qty} for name, qty in data['warehouses'].items()],
+            key=lambda x: x['quantity'],
+            reverse=True,
+        )
+        result.append({
+            'article': article,
+            'quantity': data['quantity'],
+            'warehouses_count': len(by_warehouse),
+            'by_warehouse': by_warehouse,
+            'source': source,
+        })
+
+    return sorted(result, key=lambda x: x['quantity'], reverse=True)
+
+
+def aggregate_stocks_by_warehouse_and_product(stocks, source='fbw', limit=15):
     """
     Aggregate stocks by warehouse with product breakdown.
     Excludes virtual/transit warehouse entries.
@@ -278,7 +471,8 @@ def aggregate_stocks_by_warehouse_and_product(stocks):
             warehouses[wh_name] = {
                 'name': wh_name,
                 'total': 0,
-                'products': {}
+                'products': {},
+                'source': source,
             }
 
         if article not in warehouses[wh_name]['products']:
@@ -287,8 +481,8 @@ def aggregate_stocks_by_warehouse_and_product(stocks):
         warehouses[wh_name]['products'][article] += qty
         warehouses[wh_name]['total'] += qty
 
-    # Sort by total descending and take top 15 warehouses
-    sorted_warehouses = sorted(warehouses.values(), key=lambda x: x['total'], reverse=True)[:15]
+    # Sort by total descending and take top N warehouses
+    sorted_warehouses = sorted(warehouses.values(), key=lambda x: x['total'], reverse=True)[:limit]
 
     return sorted_warehouses, sorted(all_articles)
 
@@ -386,8 +580,12 @@ if __name__ == "__main__":
     print("--- Sales ---")
     sales = fetch_wb_sales()
 
-    # Aggregate stocks by warehouse
-    stocks_by_warehouse = aggregate_stocks_by_warehouse(stocks)
+    # --- Own warehouses (FBS) ---
+    print("\n--- Seller warehouses (FBS) ---")
+    fbs_stocks, seller_warehouses, seller_cards = fetch_wb_fbs_stocks()
+
+    # Aggregate stocks by warehouse (marketplace / FBW)
+    stocks_by_warehouse = aggregate_stocks_by_warehouse(stocks, source='fbw')
 
     # Total stock: use "Всего находится на складах" if present, otherwise sum real warehouses
     total_stock = 0
@@ -401,7 +599,13 @@ if __name__ == "__main__":
         )
 
     # Aggregate stocks by warehouse with product breakdown (for chart)
-    stocks_warehouse_products, all_articles = aggregate_stocks_by_warehouse_and_product(stocks)
+    stocks_warehouse_products, all_articles = aggregate_stocks_by_warehouse_and_product(stocks, source='fbw')
+
+    # Aggregate own warehouses (FBS) stocks
+    stocks_by_warehouse_fbs = aggregate_stocks_by_warehouse(fbs_stocks, source='fbs')
+    stocks_warehouse_products_fbs, all_articles_fbs = aggregate_stocks_by_warehouse_and_product(fbs_stocks, source='fbs')
+    stocks_by_product_fbs = aggregate_stocks_by_product(fbs_stocks, source='fbs')
+    total_stock_fbs = sum(int(item.get('quantity', 0)) for item in fbs_stocks)
 
     # Aggregate orders
     orders_by_warehouse, orders_by_region = aggregate_orders_by_warehouse_and_region(orders)
@@ -420,10 +624,17 @@ if __name__ == "__main__":
         "stocks_by_warehouse": stocks_by_warehouse,
         "stocks_warehouse_products": stocks_warehouse_products,
         "all_articles": all_articles,
+        "stocks_by_warehouse_fbs": stocks_by_warehouse_fbs,
+        "stocks_warehouse_products_fbs": stocks_warehouse_products_fbs,
+        "stocks_by_product_fbs": stocks_by_product_fbs,
+        "all_articles_fbs": all_articles_fbs,
+        "total_stock_fbs": total_stock_fbs,
+        "seller_warehouses": seller_warehouses,
         "orders_by_warehouse": orders_by_warehouse,
         "orders_by_region": orders_by_region,
         "orders_by_product": orders_by_product,
         "raw_stocks": stocks,
+        "raw_stocks_fbs": fbs_stocks,
         "raw_warehouse_remains": raw_warehouse_data,
         "raw_orders": orders,
         "raw_sales": sales
@@ -437,6 +648,7 @@ if __name__ == "__main__":
     print(f"Total stock: {total_stock} units across {len(stocks_by_warehouse)} warehouses")
     print(f"Total orders (30 days): {total_orders_value:.2f} RUB, {len(orders)} orders")
     print(f"Unique articles in stock: {len(all_articles)}")
+    print(f"Own warehouses (FBS): {len(stocks_by_warehouse_fbs)} warehouses, {total_stock_fbs} units")
 
     if stocks_by_warehouse:
         print("\nTop 5 warehouses by stock:")
