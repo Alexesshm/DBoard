@@ -222,6 +222,63 @@ def fetch_ozon_orders():
     return all_orders
 
 
+def fetch_ozon_fbs_orders():
+    """Fetch FBS orders (sales from the seller's own warehouses) for the last 28 days.
+
+    Endpoint: POST /v3/posting/fbs/list
+    Mirrors fetch_ozon_orders() but for the FBS scheme.
+    """
+    url = "https://api-seller.ozon.ru/v3/posting/fbs/list"
+    dt_now = datetime.now()
+    dt_from = dt_now - timedelta(days=28)
+
+    all_orders = []
+    offset = 0
+
+    while True:
+        payload = {
+            "dir": "DESC",
+            "filter": {
+                "since": dt_from.strftime('%Y-%m-%dT00:00:00.000Z'),
+                "to": dt_now.strftime('%Y-%m-%dT23:59:59.999Z'),
+            },
+            "limit": 1000,
+            "offset": offset,
+            "with": {
+                "analytics_data": True,
+                "financial_data": True,
+            },
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=HEADERS, timeout=30)
+            response.raise_for_status()
+            result = response.json().get('result', [])
+            if isinstance(result, dict):
+                result = result.get('postings', [])
+
+            if not result:
+                break
+
+            all_orders.extend(result)
+            print(f"  ✓ FBS orders page {offset // 1000 + 1}: {len(result)} items (total: {len(all_orders)})")
+
+            if len(result) < 1000:
+                break
+
+            offset += 1000
+
+        except requests.exceptions.HTTPError as e:
+            print(f"Error fetching Ozon FBS orders: HTTP {e.response.status_code} - {e.response.text[:200]}")
+            break
+        except Exception as e:
+            print(f"Error fetching Ozon FBS orders: {e}")
+            break
+
+    print(f"  ✓ FBS orders total: {len(all_orders)} orders")
+    return all_orders
+
+
 def fetch_ozon_sales_analytics():
     """Fetch sales analytics for the last 7 days from Ozon.
     
@@ -748,6 +805,7 @@ if __name__ == "__main__":
     
     # Fetch orders for sales analysis
     orders = fetch_ozon_orders()
+    fbs_orders = fetch_ozon_fbs_orders()
     sales_analytics = fetch_ozon_sales_analytics()
     
     # Fetch finance transactions for accurate redemptions
@@ -829,6 +887,7 @@ if __name__ == "__main__":
         "warehouses": warehouses,
         "raw_stocks": stocks[:50],
         "raw_orders": orders,
+        "raw_orders_fbs": fbs_orders,
         "finance_redemptions": finance_redemptions  # Redemptions by operation date
     }
     
@@ -840,6 +899,7 @@ if __name__ == "__main__":
     print(f"Total FBO stock: {total_stock} units across {len(stocks_warehouse_products)} warehouses")
     print(f"Total FBS (own) stock: {total_stock_fbs} units across {len(fbs_warehouse_products)} warehouses")
     print(f"Total sales (7 days): {total_sales_value:.2f} RUB, {len(orders)} orders")
+    print(f"FBS (own) orders: {len(fbs_orders)}")
     
     if sales_by_product:
         print(f"\nTop 5 products by sales:")

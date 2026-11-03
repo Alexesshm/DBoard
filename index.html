@@ -82,8 +82,9 @@
             <h2 id="chartTitle">📊 Остатки по складам и товарам</h2>
             <p class="section-subtitle" id="chartSubtitle">Каждый столбец — склад, цвета — товары (артикулы)</p>
             <div class="stock-source-toggle" id="stockSourceToggle">
-                <button class="source-btn active" data-source="marketplace" onclick="switchStockSource('marketplace')">Склады маркетплейса</button>
-                <button class="source-btn" data-source="own" onclick="switchStockSource('own')">Мои склады (FBS)</button>
+                <button class="source-btn active" data-source="all" onclick="switchStockSource('all')">Все склады</button>
+                <button class="source-btn" data-source="marketplace" onclick="switchStockSource('marketplace')" id="marketplaceSourceBtn">Склады WB (FBW)</button>
+                <button class="source-btn" data-source="own" onclick="switchStockSource('own')">Свой склад FBS</button>
             </div>
             <div class="chart-container">
                 <canvas id="stocksChart"></canvas>

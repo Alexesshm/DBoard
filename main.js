@@ -37,7 +37,7 @@ let dashboardData = null;
 let currentMarketplace = 'wb';  // 'wb' or 'ozon'
 let currentPeriod = 'today';    // 'today', 'yesterday', 'days_3', 'days_7'
 let currentDetailTab = 'stocks'; // 'stocks', 'orders', 'regions'
-let currentStockSource = 'marketplace'; // 'marketplace' (FBO/FBW) or 'own' (FBS)
+let currentStockSource = 'all'; // 'all' | 'marketplace' (FBO/FBW) | 'own' (FBS)
 
 /**
  * Format number as Russian currency
@@ -61,6 +61,40 @@ function formatNumber(value) {
         return '—';
     }
     return value.toLocaleString('ru-RU');
+}
+
+/**
+ * Human-readable label for a stock source.
+ */
+function getStockSourceLabel(mpKey, source) {
+    if (source === 'own') return 'Свой склад FBS';
+    if (source === 'marketplace') return mpKey === 'wb' ? 'Склады WB (FBW)' : 'Ozon FBO';
+    return 'Все склады';
+}
+
+/**
+ * Filter a sales_by_product list by source (using per-warehouse source tags).
+ */
+function filterProductsBySource(products, source) {
+    if (!products) return [];
+    if (source === 'all') return products;
+    const wantFbs = source === 'own';
+    return products.map(p => {
+        const wh = (p.by_warehouse || []).filter(w => (w.source === 'fbs') === wantFbs);
+        const count = wh.reduce((s, w) => s + (w.count || 0), 0);
+        const revenue = wh.reduce((s, w) => s + (w.revenue || 0), 0);
+        return { ...p, count, revenue, by_warehouse: wh };
+    }).filter(p => (p.count || 0) > 0 || (p.revenue || 0) > 0);
+}
+
+/**
+ * Filter a sales_by_warehouse list by source.
+ */
+function filterWarehousesBySource(warehouses, source) {
+    if (!warehouses) return [];
+    if (source === 'all') return warehouses;
+    const wantFbs = source === 'own';
+    return warehouses.filter(w => (w.source === 'fbs') === wantFbs);
 }
 
 /**
@@ -302,7 +336,8 @@ function updateDetailTable() {
         const stocksData = dashboardData.stocks?.[mpKey] || {};
         const marketWarehouses = stocksData.by_warehouse || [];
         const ownWarehouses = stocksData.by_warehouse_fbs || [];
-        const marketLabel = mpKey === 'wb' ? 'Склады WB (FBW)' : 'Склады Ozon (FBO)';
+        const marketLabel = mpKey === 'wb' ? 'Склады WB (FBW)' : 'Ozon FBO';
+        const source = currentStockSource;
 
         const sectionRow = (title, total, cls) => `
             <tr class="stock-source-separator ${cls || ''}">
@@ -320,11 +355,22 @@ function updateDetailTable() {
                 <td style="text-align: right;">${s.items_count || 0}</td>
             </tr>`).join('');
 
-        if (marketWarehouses.length === 0 && ownWarehouses.length === 0) {
+        const sections = [];
+        if (source === 'all' || source === 'marketplace') {
+            sections.push({ title: marketLabel, items: marketWarehouses, cls: 'market-source' });
+        }
+        if (source === 'all' || source === 'own') {
+            sections.push({ title: 'Свой склад FBS', items: ownWarehouses, cls: 'own-source' });
+        }
+
+        const totalItems = sections.reduce((sum, sec) => sum + sec.items.length, 0);
+        if (totalItems === 0) {
             html = '';
         } else {
-            const marketTotal = marketWarehouses.reduce((sum, s) => sum + (s.quantity || 0), 0);
-            const ownTotal = ownWarehouses.reduce((sum, s) => sum + (s.quantity || 0), 0);
+            const body = sections.map(sec => {
+                const total = sec.items.reduce((sum, s) => sum + (s.quantity || 0), 0);
+                return sectionRow(sec.title, total, sec.cls) + warehouseRows(sec.items);
+            }).join('');
             html = `
                 <table class="detail-table">
                     <thead>
@@ -336,17 +382,14 @@ function updateDetailTable() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${marketWarehouses.length ? sectionRow(marketLabel, marketTotal, 'market-source') : ''}
-                        ${warehouseRows(marketWarehouses)}
-                        ${ownWarehouses.length ? sectionRow('Мои склады (FBS)', ownTotal, 'own-source') : ''}
-                        ${warehouseRows(ownWarehouses)}
+                        ${body}
                     </tbody>
                 </table>
             `;
         }
     } else if (tab === 'orders') {
         const salesPeriodData = dashboardData.period_data?.[currentPeriod]?.[mpKey] || {};
-        const sales = salesPeriodData.sales_by_warehouse || [];
+        const sales = filterWarehousesBySource(salesPeriodData.sales_by_warehouse || [], currentStockSource);
         html = `
             <table class="detail-table">
                 <thead>
@@ -385,7 +428,7 @@ function updateDetailTable() {
         html = buildStockMatrix(mpKey);
     }
 
-    if (!html || html.includes('<tbody></tbody>')) {
+    if (!html || html.replace(/\s+/g, '').includes('<tbody></tbody>')) {
         container.innerHTML = '<div class="empty-data" style="padding: 40px; text-align: center; opacity: 0.5;">Нет данных для отображения</div>';
     } else {
         container.innerHTML = html;
@@ -478,27 +521,35 @@ function updateMarketplaceUI() {
     // Update chart title and subtitle
     const chartTitle = document.getElementById('chartTitle');
     const chartSubtitle = document.getElementById('chartSubtitle');
-    const isOwn = currentStockSource === 'own';
+    const sourceLabel = getStockSourceLabel(mpKey, currentStockSource);
     if (chartTitle) {
-        chartTitle.textContent = isOwn
-            ? `📊 Остатки ${mpName}: мои склады`
-            : `📊 Остатки ${mpName} по регионам`;
+        chartTitle.textContent = currentStockSource === 'all'
+            ? `📊 Остатки ${mpName}: все склады`
+            : `📊 Остатки ${mpName}: ${sourceLabel}`;
     }
     if (chartSubtitle) {
-        chartSubtitle.textContent = isOwn
-            ? 'Собственные склады продавца (FBS)'
-            : `Группировка по кластерам → склады → товары (${mpType})`;
+        chartSubtitle.textContent = currentStockSource === 'all'
+            ? 'Склады маркетплейса + свои склады (FBS)'
+            : (currentStockSource === 'own'
+                ? 'Собственные склады продавца (FBS)'
+                : `Группировка по кластерам → склады → товары (${mpType})`);
     }
 
-    // Keep the source toggle in sync
+    // Keep the source toggle in sync + dynamic marketplace label
+    const mpSourceBtn = document.getElementById('marketplaceSourceBtn');
+    if (mpSourceBtn) {
+        mpSourceBtn.textContent = mpKey === 'wb' ? 'Склады WB (FBW)' : 'Ozon FBO';
+    }
     document.querySelectorAll('.source-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.source === currentStockSource);
     });
 
     // Update horizontal clustered bar chart (Stocks data)
-    const chartData = isOwn ? stocksData.chart_data_fbs : stocksData.chart_data;
+    const chartData = currentStockSource === 'all'
+        ? stocksData.chart_data_all
+        : (currentStockSource === 'own' ? stocksData.chart_data_fbs : stocksData.chart_data);
     if (chartData) {
-        createClusteredHorizontalChart(chartData, mpKey, isOwn);
+        createClusteredHorizontalChart(chartData, mpKey);
     } else {
         // No chart data - show empty state
         const ctxContainer = document.querySelector('.chart-container');
@@ -513,11 +564,13 @@ function updateMarketplaceUI() {
     }
 
     // Update stocks summary by product (Stocks data)
-    const stocksByProduct = isOwn ? stocksData.by_product_fbs : stocksData.by_product;
-    createStocksSummary(stocksByProduct, isOwn ? 'FBS' : mpType, isOwn);
+    const stocksByProduct = currentStockSource === 'all'
+        ? stocksData.by_product_all
+        : (currentStockSource === 'own' ? stocksData.by_product_fbs : stocksData.by_product);
+    createStocksSummary(stocksByProduct, getStockSourceLabel(mpKey, currentStockSource));
 
-    // Update sales by product grid (Sales Period Data)
-    const salesByProduct = periodData.sales_by_product;
+    // Update sales by product grid (Sales Period Data), filtered by source
+    const salesByProduct = filterProductsBySource(periodData.sales_by_product, currentStockSource);
     createProductsGrid(salesByProduct, mpKey);
 
     // Update products section title based on period
@@ -637,7 +690,7 @@ function createStocksChart(chartData) {
 /**
  * Create horizontal clustered stocks chart with region grouping
  */
-function createClusteredHorizontalChart(chartData, mpType, isOwn = false) {
+function createClusteredHorizontalChart(chartData, mpType) {
     const container = document.querySelector('.chart-container');
     if (!container) return;
 
@@ -675,42 +728,41 @@ function createClusteredHorizontalChart(chartData, mpType, isOwn = false) {
         });
     });
 
-    // Group warehouses by cluster
-    // Warehouses with total stock = 1 go to 'Прочие' regardless of cluster
+    // Group warehouses by cluster.
+    // Prefer the precomputed clusters (they cover "all", "marketplace" and
+    // "own" views); fall back to region re-clustering.
     const clusteredData = {};
-    warehouses.forEach(wh => {
-        const whData = warehouseData[wh];
+    const addWarehouseToCluster = (wh, clusterName) => {
+        const whData = warehouseData[wh] || {};
         let whTotal = 0;
         Object.values(whData).forEach(p => whTotal += p.qty);
-
-        // Determine cluster: own warehouses always form one "Мои склады" group
-        let clusterName;
-        if (isOwn) {
-            clusterName = 'Мои склады';
-        } else if (whTotal === 1) {
-            clusterName = 'Прочие';
-        } else {
-            clusterName = getWarehouseCluster(wh, mpType === 'wb' ? 'wb' : 'ozon');
-        }
-
         if (!clusteredData[clusterName]) {
-            clusteredData[clusterName] = {
-                name: clusterName,
-                warehouses: [],
-                totalStock: 0
-            };
+            clusteredData[clusterName] = { name: clusterName, warehouses: [], totalStock: 0 };
         }
-
-        clusteredData[clusterName].warehouses.push({
-            name: wh,
-            products: whData,
-            total: whTotal
-        });
+        clusteredData[clusterName].warehouses.push({ name: wh, products: whData, total: whTotal });
         clusteredData[clusterName].totalStock += whTotal;
-    });
+    };
 
-    // Sort clusters by total stock (descending)
-    const sortedClusters = Object.values(clusteredData).sort((a, b) => b.totalStock - a.totalStock);
+    let sortedClusters;
+    if (Array.isArray(chartData.clusters) && chartData.clusters.length > 0) {
+        chartData.clusters.forEach(cluster => {
+            const start = cluster.start_index != null ? cluster.start_index : 0;
+            const end = cluster.end_index != null ? cluster.end_index : (warehouses.length - 1);
+            for (let i = start; i <= end && i < warehouses.length; i++) {
+                addWarehouseToCluster(warehouses[i], cluster.name);
+            }
+        });
+        sortedClusters = chartData.clusters.map(c => clusteredData[c.name]).filter(Boolean);
+    } else {
+        warehouses.forEach(wh => {
+            let whTotal = 0;
+            Object.values(warehouseData[wh] || {}).forEach(p => whTotal += p.qty);
+            const clusterName = whTotal === 1 ? 'Прочие'
+                : getWarehouseCluster(wh, mpType === 'wb' ? 'wb' : 'ozon');
+            addWarehouseToCluster(wh, clusterName);
+        });
+        sortedClusters = Object.values(clusteredData).sort((a, b) => b.totalStock - a.totalStock);
+    }
 
     // Find max warehouse total for bar scaling
     let maxWarehouseTotal = 0;
@@ -912,7 +964,7 @@ function addClusterHeaders(clusters, totalWarehouses) {
 /**
  * Create stocks summary by product
  */
-function createStocksSummary(stocksByProduct, mpType = 'FBW', isOwn = false) {
+function createStocksSummary(stocksByProduct, sourceLabel = 'FBW') {
     const container = document.getElementById('stocksSummary');
     if (!container) return;
 
@@ -922,9 +974,7 @@ function createStocksSummary(stocksByProduct, mpType = 'FBW', isOwn = false) {
     }
 
     const totalStocks = stocksByProduct.reduce((sum, p) => sum + p.quantity, 0);
-    const title = isOwn
-        ? '📦 Общие остатки по товарам (мои склады, FBS)'
-        : `📦 Общие остатки ${mpType} по товарам`;
+    const title = `📦 Остатки по товарам: ${sourceLabel}`;
 
     container.innerHTML = `
         <h4>${title}</h4>
@@ -1298,8 +1348,13 @@ function updateStockMonitoring() {
         return item.stock > 1 || item.orders7d > 0;
     });
 
-    // Filter by current marketplace (from tabs)
+    // Filter by current marketplace (from tabs) and stock source
     let filtered = monitoringData.filter(item => item.mp === currentMarketplace);
+    if (currentStockSource === 'own') {
+        filtered = filtered.filter(item => item.source === 'fbs');
+    } else if (currentStockSource === 'marketplace') {
+        filtered = filtered.filter(item => item.source !== 'fbs');
+    }
 
     // Apply status filter
     if (statusFilter !== 'all') {
@@ -2019,9 +2074,13 @@ function toggleClusterGroup(headerRow) {
  */
 function buildStockMatrix(mpKey) {
     const stocksData = dashboardData?.stocks?.[mpKey] || {};
-    const isOwn = currentStockSource === 'own';
-    const chartData = isOwn ? stocksData.chart_data_fbs : stocksData.chart_data;
-    const allArticles = (isOwn ? stocksData.all_articles_fbs : stocksData.all_articles) || [];
+    const source = currentStockSource;
+    const chartData = source === 'all'
+        ? stocksData.chart_data_all
+        : (source === 'own' ? stocksData.chart_data_fbs : stocksData.chart_data);
+    const allArticles = (source === 'all'
+        ? stocksData.all_articles_all
+        : (source === 'own' ? stocksData.all_articles_fbs : stocksData.all_articles)) || [];
 
     if (!chartData || !chartData.labels || chartData.labels.length === 0) {
         return `<div class="stock-matrix-empty">
@@ -2043,12 +2102,11 @@ function buildStockMatrix(mpKey) {
         });
     });
 
-    // Group warehouses by cluster
+    // Group warehouses by cluster (prefer precomputed clusters)
     const clustersMap = {};
     const clusterOrder = [];
 
-    warehouses.forEach(wh => {
-        const clusterName = isOwn ? 'Мои склады' : getWarehouseCluster(wh, mpKey);
+    const addToCluster = (wh, clusterName) => {
         if (!clustersMap[clusterName]) {
             clustersMap[clusterName] = { name: clusterName, warehouses: [], totalStock: 0 };
             clusterOrder.push(clusterName);
@@ -2056,10 +2114,22 @@ function buildStockMatrix(mpKey) {
         const whTotal = Object.values(stockLookup[wh]).reduce((s, v) => s + v, 0);
         clustersMap[clusterName].warehouses.push({ name: wh, total: whTotal });
         clustersMap[clusterName].totalStock += whTotal;
-    });
+    };
 
-    // Sort clusters by total stock desc
-    clusterOrder.sort((a, b) => clustersMap[b].totalStock - clustersMap[a].totalStock);
+    if (Array.isArray(chartData.clusters) && chartData.clusters.length > 0) {
+        chartData.clusters.forEach(cluster => {
+            const start = cluster.start_index != null ? cluster.start_index : 0;
+            const end = cluster.end_index != null ? cluster.end_index : (warehouses.length - 1);
+            for (let i = start; i <= end && i < warehouses.length; i++) {
+                addToCluster(warehouses[i], cluster.name);
+            }
+        });
+        clusterOrder.length = 0;
+        clusterOrder.push(...chartData.clusters.map(c => c.name).filter(n => clustersMap[n]));
+    } else {
+        warehouses.forEach(wh => addToCluster(wh, getWarehouseCluster(wh, mpKey)));
+        clusterOrder.sort((a, b) => clustersMap[b].totalStock - clustersMap[a].totalStock);
+    }
 
     // Build article totals per cluster
     const clusterArticleTotals = {};
@@ -2167,7 +2237,7 @@ function buildStockMatrix(mpKey) {
         <div class="stock-matrix-header">
             <div class="matrix-title-block">
                 <span class="matrix-title-icon">🗺️</span>
-                <span>${isOwn ? 'Матрица остатков: мои склады' : 'Матрица остатков по регионам'}</span>
+                <span>${source === 'all' ? 'Матрица остатков: все склады' : (source === 'own' ? 'Матрица остатков: свой склад FBS' : 'Матрица остатков по регионам')}</span>
             </div>
             <div class="matrix-legend">
                 <span class="legend-dot heat-high"></span><span>Высокий</span>

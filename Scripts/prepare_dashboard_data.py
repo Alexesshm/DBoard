@@ -284,6 +284,272 @@ def build_chart_data(stocks_wp, all_articles, mp_type='wb', single_cluster=False
     return chart
 
 
+def merge_warehouse_lists(main_list, fbs_list, main_source='marketplace'):
+    """Concat marketplace + own warehouse lists into one, tagging the source."""
+    merged = []
+    for w in (main_list or []):
+        item = dict(w)
+        item.setdefault('source', main_source)
+        merged.append(item)
+    for w in (fbs_list or []):
+        item = dict(w)
+        item['source'] = 'fbs'
+        merged.append(item)
+    return sorted(merged, key=lambda x: x.get('quantity', 0), reverse=True)
+
+
+def merge_product_lists(main_list, fbs_list, main_source='marketplace'):
+    """Merge by-product lists (sum quantity, merge per-warehouse breakdown)."""
+    merged = {}
+    for src, items in ((main_source, main_list or []), ('fbs', fbs_list or [])):
+        for p in items:
+            article = p.get('article', 'Unknown')
+            m = merged.setdefault(article, {'article': article, 'quantity': 0, 'by_warehouse': {}})
+            m['quantity'] += p.get('quantity', 0)
+            for w in p.get('by_warehouse', []) or []:
+                wm = m['by_warehouse'].setdefault(
+                    w['name'], {'name': w['name'], 'quantity': 0, 'source': w.get('source', src)})
+                wm['quantity'] += w.get('quantity', 0)
+    out = []
+    for article, m in merged.items():
+        by_wh = sorted(m['by_warehouse'].values(), key=lambda x: x['quantity'], reverse=True)
+        out.append({
+            'article': article,
+            'quantity': m['quantity'],
+            'warehouses_count': len(by_wh),
+            'by_warehouse': by_wh,
+            'color': get_article_color(article),
+        })
+    return sorted(out, key=lambda x: x['quantity'], reverse=True)
+
+
+def build_combined_chart_data(stocks_wp, stocks_wp_fbs, all_articles, mp_type='wb'):
+    """Chart data for the "Все склады" view: marketplace clusters + "Мои склады"."""
+    main = list(stocks_wp or [])
+    own = list(stocks_wp_fbs or [])
+    if not main and not own:
+        return None
+
+    from collections import defaultdict
+
+    articles = set(all_articles or [])
+    for wh in own:
+        articles.update((wh.get('products') or {}).keys())
+    for wh in main:
+        articles.update((wh.get('products') or {}).keys())
+
+    clustered = defaultdict(list)
+    for wh in main:
+        clustered[get_warehouse_cluster(wh['name'], mp_type)].append(wh)
+
+    if mp_type == 'wb':
+        priority = ['Центральный', 'Северо-Западный', 'Приволжский', 'Уральский']
+    else:
+        priority = ['Москва, МО и Дальние регионы', 'Санкт-Петербург и СЗО', 'Казань', 'Краснодар']
+
+    order = [c for c in priority if c in clustered]
+    order += sorted(c for c in clustered if c not in priority)
+    if own:
+        clustered['Мои склады'] = own
+        order.append('Мои склады')
+
+    chart = {'labels': [], 'datasets': [], 'clusters': []}
+    for cluster_name in order:
+        warehouses = clustered[cluster_name]
+        total = sum(sum((w.get('products') or {}).values()) for w in warehouses)
+        start = len(chart['labels'])
+        for w in warehouses:
+            chart['labels'].append(w['name'])
+        chart['clusters'].append({
+            'name': cluster_name,
+            'start_index': start,
+            'end_index': len(chart['labels']) - 1,
+            'warehouse_count': len(warehouses),
+            'total_stock': total,
+        })
+
+    for article in articles:
+        data = []
+        for cluster_name in order:
+            for w in clustered[cluster_name]:
+                data.append((w.get('products') or {}).get(article, 0))
+        if any(data):
+            chart['datasets'].append({
+                'label': article,
+                'data': data,
+                'backgroundColor': get_article_color(article),
+                'borderColor': '#1a1a1a',
+                'borderWidth': 1,
+            })
+    return chart
+
+
+def tag_sales_sources(agg, own_warehouse_names, main_source='fbw'):
+    """Tag warehouse/product rows with source and compute split totals."""
+    own = {str(n).strip().lower() for n in (own_warehouse_names or [])}
+
+    for wh in agg.get('sales_by_warehouse', []):
+        wh['source'] = 'fbs' if str(wh['name']).strip().lower() in own else main_source
+    for product in agg.get('sales_by_product', []):
+        for wh in product.get('by_warehouse', []):
+            wh['source'] = 'fbs' if str(wh['name']).strip().lower() in own else main_source
+
+    fbs_warehouses = [w for w in agg.get('sales_by_warehouse', []) if w.get('source') == 'fbs']
+    fbs_revenue = sum(w.get('revenue', 0) for w in fbs_warehouses)
+    fbs_count = sum(w.get('count', 0) for w in fbs_warehouses)
+
+    agg['revenue_fbs'] = fbs_revenue
+    agg['revenue_marketplace'] = agg.get('revenue', 0) - fbs_revenue
+    agg['orders_count_fbs'] = fbs_count
+    agg['orders_count_marketplace'] = agg.get('orders_count', 0) - fbs_count
+    return agg
+
+
+def tag_all_sources(agg, source):
+    """Tag every warehouse/product row with one source."""
+    for wh in agg.get('sales_by_warehouse', []):
+        wh['source'] = source
+    for product in agg.get('sales_by_product', []):
+        for wh in product.get('by_warehouse', []):
+            wh['source'] = source
+    return agg
+
+
+def aggregate_fbs_sales_data(sales_list):
+    """Aggregate Ozon FBS postings (sales from the seller's own warehouses)."""
+    total_revenue = 0
+    orders_count = 0
+    by_warehouse = {}
+    by_region = {}
+    by_product = {}
+
+    for item in sales_list:
+        orders_count += 1
+        analytics = item.get('analytics_data') or {}
+        wh_name = (item.get('warehouse_name')
+                   or (item.get('warehouse') or {}).get('name')
+                   or analytics.get('warehouse_name')
+                   or 'Свой склад')
+        region = analytics.get('region') or analytics.get('city') or 'Свой склад'
+
+        if wh_name not in by_warehouse:
+            by_warehouse[wh_name] = {'name': wh_name, 'count': 0, 'revenue': 0,
+                                     'by_product': {}, 'source': 'fbs'}
+        wh = by_warehouse[wh_name]
+
+        order_price = 0
+        for prod in (item.get('products') or []):
+            article = prod.get('offer_id', 'Unknown')
+            p_price = float(prod.get('price', 0) or 0)
+            p_qty = int(prod.get('quantity', 1) or 1)
+            p_revenue = p_price * p_qty
+            order_price += p_revenue
+
+            p = by_product.setdefault(article, {'article': article, 'count': 0,
+                                               'revenue': 0, 'by_warehouse': {}})
+            p['count'] += p_qty
+            p['revenue'] += p_revenue
+            w = p['by_warehouse'].setdefault(wh_name, {'name': wh_name, 'count': 0,
+                                                       'revenue': 0, 'source': 'fbs'})
+            w['count'] += p_qty
+            w['revenue'] += p_revenue
+
+            wp = wh['by_product'].setdefault(article, {'article': article, 'count': 0, 'revenue': 0})
+            wp['count'] += p_qty
+            wp['revenue'] += p_revenue
+
+        total_revenue += order_price
+        wh['count'] += 1
+        wh['revenue'] += order_price
+
+        rg = by_region.setdefault(region, {'name': region, 'count': 0, 'revenue': 0, 'source': 'fbs'})
+        rg['count'] += 1
+        rg['revenue'] += order_price
+
+    for wh in by_warehouse.values():
+        wh['by_product'] = sorted(wh['by_product'].values(), key=lambda x: x['count'], reverse=True)
+
+    sorted_products = sorted(by_product.values(), key=lambda x: x['revenue'], reverse=True)
+    for p in sorted_products:
+        p['by_warehouse'] = sorted(p['by_warehouse'].values(), key=lambda x: x['revenue'], reverse=True)
+
+    return {
+        'revenue': total_revenue,
+        'orders_count': orders_count,
+        'sales_by_warehouse': sorted(by_warehouse.values(), key=lambda x: x['revenue'], reverse=True)[:15],
+        'sales_by_region': sorted(by_region.values(), key=lambda x: x['revenue'], reverse=True)[:15],
+        'sales_by_product': sorted_products,
+        'source': 'fbs',
+    }
+
+
+def merge_sales_aggs(main_agg, fbs_agg):
+    """Merge FBO/FBW aggregate and FBS aggregate into one combined aggregate."""
+    out = {
+        'revenue': main_agg.get('revenue', 0) + fbs_agg.get('revenue', 0),
+        'orders_count': main_agg.get('orders_count', 0) + fbs_agg.get('orders_count', 0),
+        'sales_by_warehouse': [],
+        'sales_by_region': [],
+        'sales_by_product': [],
+        'revenue_marketplace': main_agg.get('revenue', 0),
+        'revenue_fbs': fbs_agg.get('revenue', 0),
+        'orders_count_marketplace': main_agg.get('orders_count', 0),
+        'orders_count_fbs': fbs_agg.get('orders_count', 0),
+    }
+
+    wh = {}
+    for agg in (main_agg, fbs_agg):
+        for w in agg.get('sales_by_warehouse', []):
+            m = wh.setdefault(w['name'], {'name': w['name'], 'count': 0, 'revenue': 0,
+                                          'by_product': {}, 'source': w.get('source', 'marketplace')})
+            m['count'] += w.get('count', 0)
+            m['revenue'] += w.get('revenue', 0)
+            for p in w.get('by_product', []):
+                pp = m['by_product'].setdefault(p['article'], {'article': p['article'],
+                                                               'count': 0, 'revenue': 0})
+                pp['count'] += p.get('count', 0)
+                pp['revenue'] += p.get('revenue', 0)
+    out['sales_by_warehouse'] = sorted(wh.values(), key=lambda x: x['revenue'], reverse=True)[:15]
+    for w in out['sales_by_warehouse']:
+        w['by_product'] = sorted(w['by_product'].values(), key=lambda x: x['count'], reverse=True)
+
+    rg = {}
+    for agg in (main_agg, fbs_agg):
+        for r in agg.get('sales_by_region', []):
+            m = rg.setdefault(r['name'], {'name': r['name'], 'count': 0, 'revenue': 0})
+            m['count'] += r.get('count', 0)
+            m['revenue'] += r.get('revenue', 0)
+    out['sales_by_region'] = sorted(rg.values(), key=lambda x: x['revenue'], reverse=True)[:15]
+
+    pr = {}
+    for agg in (main_agg, fbs_agg):
+        for p in agg.get('sales_by_product', []):
+            m = pr.setdefault(p['article'], {'article': p['article'], 'count': 0,
+                                             'revenue': 0, 'by_warehouse': {}})
+            m['count'] += p.get('count', 0)
+            m['revenue'] += p.get('revenue', 0)
+            for w in p.get('by_warehouse', []):
+                ww = m['by_warehouse'].setdefault(w['name'], {'name': w['name'], 'count': 0,
+                                                              'revenue': 0,
+                                                              'source': w.get('source', 'marketplace')})
+                ww['count'] += w.get('count', 0)
+                ww['revenue'] += w.get('revenue', 0)
+    out['sales_by_product'] = sorted(pr.values(), key=lambda x: x['revenue'], reverse=True)
+    for p in out['sales_by_product']:
+        p['by_warehouse'] = sorted(p['by_warehouse'].values(), key=lambda x: x['revenue'], reverse=True)
+
+    return out
+
+
+def get_order_date(item):
+    """Return the first available order date field."""
+    for key in ('created_at', 'in_process_at', 'order_date', 'date', 'dateFull'):
+        value = item.get(key)
+        if value:
+            return value
+    return None
+
+
 def parse_date(date_str):
     """Parse date string to datetime object."""
     if not date_str:
@@ -612,8 +878,30 @@ def prepare():
         )
         dashboard["stocks"]["wb"]["all_articles_fbs"] = wb_data.get('all_articles_fbs', [])
 
+        # Combined view ("Все склады") — the default
+        dashboard["stocks"]["wb"]["by_warehouse_all"] = merge_warehouse_lists(
+            dashboard["stocks"]["wb"].get("by_warehouse", []),
+            dashboard["stocks"]["wb"].get("by_warehouse_fbs", []),
+            main_source='fbw',
+        )
+        dashboard["stocks"]["wb"]["by_product_all"] = merge_product_lists(
+            dashboard["stocks"]["wb"].get("by_product", []),
+            dashboard["stocks"]["wb"].get("by_product_fbs", []),
+            main_source='fbw',
+        )
+        dashboard["stocks"]["wb"]["chart_data_all"] = build_combined_chart_data(
+            wb_data.get('stocks_warehouse_products'),
+            wb_data.get('stocks_warehouse_products_fbs'),
+            wb_data.get('all_articles'),
+            'wb',
+        )
+        dashboard["stocks"]["wb"]["all_articles_all"] = sorted(
+            set(wb_data.get('all_articles', [])) | set(wb_data.get('all_articles_fbs', []))
+        )
+
         # Sales (Orders) Processing Per Period
         raw_orders = wb_data.get('raw_orders', [])
+        wb_own_names = [w.get('name') for w in wb_data.get('seller_warehouses', []) if w.get('name')]
         
         for p in periods_config:
             p_key = p['key']
@@ -634,8 +922,9 @@ def prepare():
                     if d >= start_day:
                          filtered_sales.append(item)
             
-            # Aggregate
+            # Aggregate (tag own vs marketplace warehouses)
             agg = aggregate_sales_data(filtered_sales, 'wb')
+            tag_sales_sources(agg, wb_own_names, main_source='fbw')
             if p_key not in dashboard["period_data"]: dashboard["period_data"][p_key] = {}
             dashboard["period_data"][p_key]["wb"] = agg
         
@@ -775,31 +1064,55 @@ def prepare():
         )
         dashboard["stocks"]["ozon"]["all_articles_fbs"] = ozon_data.get('all_articles_fbs', [])
 
-        # Sales Processing Per Period
+        # Combined view ("Все склады") — the default
+        dashboard["stocks"]["ozon"]["by_warehouse_all"] = merge_warehouse_lists(
+            dashboard["stocks"]["ozon"].get("by_warehouse", []),
+            dashboard["stocks"]["ozon"].get("by_warehouse_fbs", []),
+            main_source='fbo',
+        )
+        dashboard["stocks"]["ozon"]["by_product_all"] = merge_product_lists(
+            dashboard["stocks"]["ozon"].get("by_product", []),
+            dashboard["stocks"]["ozon"].get("by_product_fbs", []),
+            main_source='fbo',
+        )
+        dashboard["stocks"]["ozon"]["chart_data_all"] = build_combined_chart_data(
+            ozon_data.get('stocks_warehouse_products'),
+            ozon_data.get('stocks_warehouse_products_fbs'),
+            ozon_data.get('all_articles'),
+            'ozon',
+        )
+        dashboard["stocks"]["ozon"]["all_articles_all"] = sorted(
+            set(ozon_data.get('all_articles', [])) | set(ozon_data.get('all_articles_fbs', []))
+        )
+
+        # Sales Processing Per Period (FBO + FBS)
         raw_orders = ozon_data.get('raw_orders', [])
-        
+        raw_orders_fbs = ozon_data.get('raw_orders_fbs', [])
+
+        def _filter_by_period(items, p):
+            result = []
+            for item in items:
+                dt = parse_date(get_order_date(item))
+                if not dt:
+                    continue
+                d = dt.date()
+                if p.get('exact_day'):
+                    if d == today - timedelta(days=p['days']):
+                        result.append(item)
+                else:
+                    if d >= today - timedelta(days=p['days']):
+                        result.append(item)
+            return result
+
         for p in periods_config:
             p_key = p['key']
-            filtered_sales = []
-            
-            for item in raw_orders:
-                # Ozon date field: created_at
-                d_str = item.get('created_at')
-                dt = parse_date(d_str)
-                if not dt: continue
-                d = dt.date()
-                
-                if p.get('exact_day'):
-                    target_day = today - timedelta(days=p['days'])
-                    if d == target_day:
-                        filtered_sales.append(item)
-                else:
-                    start_day = today - timedelta(days=p['days'])
-                    if d >= start_day:
-                         filtered_sales.append(item)
-            
-            # Aggregate
-            agg = aggregate_sales_data(filtered_sales, 'ozon')
+            # Marketplace (FBO) orders
+            fbo_agg = aggregate_sales_data(_filter_by_period(raw_orders, p), 'ozon')
+            tag_all_sources(fbo_agg, 'fbo')
+            # Seller own warehouse (FBS) orders
+            fbs_agg = aggregate_fbs_sales_data(_filter_by_period(raw_orders_fbs, p))
+            # Combined view
+            agg = merge_sales_aggs(fbo_agg, fbs_agg)
             if p_key not in dashboard["period_data"]: dashboard["period_data"][p_key] = {}
             dashboard["period_data"][p_key]["ozon"] = agg
             
