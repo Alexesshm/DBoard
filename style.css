@@ -1648,6 +1648,10 @@ body {
     background: rgba(245, 158, 11, 0.05);
 }
 
+.monitoring-table tbody tr.unknown {
+    background: rgba(148, 163, 184, 0.05);
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-flex;
@@ -1672,6 +1676,11 @@ body {
 .status-badge.normal {
     background: rgba(34, 197, 94, 0.2);
     color: #22c55e;
+}
+
+.status-badge.unknown {
+    background: rgba(148, 163, 184, 0.18);
+    color: #cbd5e1;
 }
 
 /* Days Left Progress Bar */

@@ -7,6 +7,8 @@ Calculates sales statistics for multiple periods: Today, Yesterday, 3 Days, 7 Da
 
 import json
 import os
+import re
+import unicodedata
 from datetime import datetime, timedelta, date
 
 # Dynamic path resolution
@@ -25,6 +27,19 @@ VIRTUAL_WAREHOUSES = {
     'в пути к покупателю',
     'в пути на склад',
     'в пути',
+}
+
+# Known FBW labels from the seller's WB warehouse list. warehouseType from the
+# Statistics API remains authoritative; these names are a compatibility fallback
+# for older cached exports that do not include warehouseType.
+WB_FBW_WAREHOUSE_NAMES = {
+    'склад wb рф',
+    'самара (новосемейкино)',
+    'самара',
+    'котовск',
+    'тула',
+    'ск ереван',
+    'ереван',
 }
 
 
@@ -384,24 +399,66 @@ def build_combined_chart_data(stocks_wp, stocks_wp_fbs, all_articles, mp_type='w
     return chart
 
 
+def normalize_warehouse_name(name):
+    """Canonicalize names, ignoring case, spaces, underscores, emoji and punctuation."""
+    value = unicodedata.normalize('NFKC', str(name or '')).casefold().replace('ё', 'е')
+    return ''.join(char for char in value if char.isalnum())
+
+
+def warehouse_source_lookup(own_warehouse_names, main_source='fbw'):
+    """Build canonical known-name sources; seller API names override defaults."""
+    names = {normalize_warehouse_name(n): 'fbs' for n in (own_warehouse_names or []) if normalize_warehouse_name(n)}
+    for name in WB_FBW_WAREHOUSE_NAMES:
+        names.setdefault(normalize_warehouse_name(name), main_source)
+    return names
+
+
+def classify_wb_warehouse(item, known_warehouse_sources, main_source='fbw'):
+    """Classify a WB statistics row using documented warehouseType first.
+
+    Name matching is only a fallback for older exports/fixtures that omit
+    warehouseType. Unknown types are not silently treated as FBW.
+    """
+    warehouse_type = normalize_warehouse_name(item.get('warehouseType') or item.get('warehouse_type'))
+    name = normalize_warehouse_name(item.get('warehouseName') or item.get('warehouse_name') or item.get('name'))
+    if warehouse_type in {'складпродавца', 'warehouseofseller', 'sellerwarehouse'}:
+        return 'fbs'
+    if warehouse_type in {'складwb', 'складвайлдберриз', 'wildberrieswarehouse'}:
+        return main_source
+
+    if name in known_warehouse_sources:
+        return known_warehouse_sources[name]
+    return 'unknown'
+
+
 def tag_sales_sources(agg, own_warehouse_names, main_source='fbw'):
-    """Tag warehouse/product rows with source and compute split totals."""
-    own = {str(n).strip().lower() for n in (own_warehouse_names or [])}
+    """Tag sales rows by authoritative WB warehouseType, retaining name fallback."""
+    known_warehouse_sources = warehouse_source_lookup(own_warehouse_names, main_source)
+
+    def tag(wh):
+        # Preserve separate rows with identical names but different warehouseType.
+        # The API type wins per record; known seller/FBW names are fallback only.
+        wh['source'] = classify_wb_warehouse(wh, known_warehouse_sources, main_source)
 
     for wh in agg.get('sales_by_warehouse', []):
-        wh['source'] = 'fbs' if str(wh['name']).strip().lower() in own else main_source
+        tag(wh)
     for product in agg.get('sales_by_product', []):
         for wh in product.get('by_warehouse', []):
-            wh['source'] = 'fbs' if str(wh['name']).strip().lower() in own else main_source
+            tag(wh)
 
     fbs_warehouses = [w for w in agg.get('sales_by_warehouse', []) if w.get('source') == 'fbs']
+    unknown_warehouses = [w for w in agg.get('sales_by_warehouse', []) if w.get('source') == 'unknown']
     fbs_revenue = sum(w.get('revenue', 0) for w in fbs_warehouses)
     fbs_count = sum(w.get('count', 0) for w in fbs_warehouses)
+    unknown_revenue = sum(w.get('revenue', 0) for w in unknown_warehouses)
+    unknown_count = sum(w.get('count', 0) for w in unknown_warehouses)
 
     agg['revenue_fbs'] = fbs_revenue
-    agg['revenue_marketplace'] = agg.get('revenue', 0) - fbs_revenue
+    agg['revenue_unknown_source'] = unknown_revenue
+    agg['revenue_marketplace'] = agg.get('revenue', 0) - fbs_revenue - unknown_revenue
     agg['orders_count_fbs'] = fbs_count
-    agg['orders_count_marketplace'] = agg.get('orders_count', 0) - fbs_count
+    agg['orders_count_unknown_source'] = unknown_count
+    agg['orders_count_marketplace'] = agg.get('orders_count', 0) - fbs_count - unknown_count
     return agg
 
 
@@ -413,6 +470,41 @@ def tag_all_sources(agg, source):
         for wh in product.get('by_warehouse', []):
             wh['source'] = source
     return agg
+
+
+def aggregate_wb_realized_sales(sales_list, own_warehouse_names, period_start=None, period_end=None):
+    """Build net realized sold units by article and source from WB sales rows."""
+    known = warehouse_source_lookup(own_warehouse_names, 'fbw')
+    unique = {}
+    for item in sales_list or []:
+        article = item.get('supplierArticle') or 'Unknown'
+        name = item.get('warehouseName') or item.get('warehouse_name') or 'Unknown'
+        source = classify_wb_warehouse(item, known, 'fbw')
+        if source == 'unknown':
+            continue
+        sale_id = str(item.get('saleID') or item.get('saleId') or '')
+        dt = parse_date(item.get('date') or item.get('dateFull'))
+        if dt and period_start and period_end and not (period_start <= dt.date() <= period_end):
+            continue
+        unique[(article, name, source, sale_id)] = item
+
+    products = {}
+    for (article, name, source, sale_id), item in unique.items():
+        qty = -1 if sale_id.upper().startswith('R') else 1
+        # FBW order labels are a pooled reporting bucket, not warehouse attribution.
+        name = 'Склад WB РФ' if source == 'fbw' else name
+        product = products.setdefault(article, {'article': article, 'count': 0, 'revenue': 0, 'by_warehouse': {}})
+        product['count'] += qty
+        row = product['by_warehouse'].setdefault((name, source), {
+            'name': name, 'count': 0, 'revenue': 0, 'source': source,
+        })
+        row['count'] += qty
+
+    result = []
+    for product in products.values():
+        product['by_warehouse'] = list(product['by_warehouse'].values())
+        result.append(product)
+    return sorted(result, key=lambda p: p['count'], reverse=True)
 
 
 def aggregate_fbs_sales_data(sales_list):
@@ -509,7 +601,7 @@ def merge_sales_aggs(main_agg, fbs_agg):
                                                                'count': 0, 'revenue': 0})
                 pp['count'] += p.get('count', 0)
                 pp['revenue'] += p.get('revenue', 0)
-    out['sales_by_warehouse'] = sorted(wh.values(), key=lambda x: x['revenue'], reverse=True)[:15]
+    out['sales_by_warehouse'] = sorted(wh.values(), key=lambda x: x['revenue'], reverse=True)
     for w in out['sales_by_warehouse']:
         w['by_product'] = sorted(w['by_product'].values(), key=lambda x: x['count'], reverse=True)
 
@@ -673,18 +765,24 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
 
         total_revenue += price
         
-        # Warehouse aggregation (with product breakdown)
-        if wh_name not in by_warehouse:
-            by_warehouse[wh_name] = {'name': wh_name, 'count': 0, 'revenue': 0, 'by_product': {}}
-        by_warehouse[wh_name]['count'] += 1
-        by_warehouse[wh_name]['revenue'] += price
+        # Keep WB warehouses with the same display name but different API types
+        # separate; `warehouseType` is the authoritative FBW/FBS distinction.
+        warehouse_type = item.get('warehouseType') or item.get('warehouse_type') or ''
+        warehouse_key = (wh_name, warehouse_type) if mp_type == 'wb' else wh_name
+        if warehouse_key not in by_warehouse:
+            by_warehouse[warehouse_key] = {
+                'name': wh_name, 'warehouseType': warehouse_type,
+                'count': 0, 'revenue': 0, 'by_product': {},
+            }
+        by_warehouse[warehouse_key]['count'] += 1
+        by_warehouse[warehouse_key]['revenue'] += price
         
         # Add product to warehouse breakdown (for WB)
         if mp_type == 'wb':
-            if article not in by_warehouse[wh_name]['by_product']:
-                by_warehouse[wh_name]['by_product'][article] = {'article': article, 'count': 0, 'revenue': 0}
-            by_warehouse[wh_name]['by_product'][article]['count'] += 1
-            by_warehouse[wh_name]['by_product'][article]['revenue'] += price
+            if article not in by_warehouse[warehouse_key]['by_product']:
+                by_warehouse[warehouse_key]['by_product'][article] = {'article': article, 'count': 0, 'revenue': 0}
+            by_warehouse[warehouse_key]['by_product'][article]['count'] += 1
+            by_warehouse[warehouse_key]['by_product'][article]['revenue'] += price
         
         # Region aggregation
         if region not in by_region:
@@ -700,10 +798,13 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
             by_product[article]['count'] += 1
             by_product[article]['revenue'] += price
             
-            if wh_name not in by_product[article]['by_warehouse']:
-                 by_product[article]['by_warehouse'][wh_name] = {'name': wh_name, 'count': 0, 'revenue': 0}
-            by_product[article]['by_warehouse'][wh_name]['count'] += 1
-            by_product[article]['by_warehouse'][wh_name]['revenue'] += price
+            if warehouse_key not in by_product[article]['by_warehouse']:
+                 by_product[article]['by_warehouse'][warehouse_key] = {
+                     'name': wh_name, 'warehouseType': warehouse_type,
+                     'count': 0, 'revenue': 0,
+                 }
+            by_product[article]['by_warehouse'][warehouse_key]['count'] += 1
+            by_product[article]['by_warehouse'][warehouse_key]['revenue'] += price
             
         else: # Ozon - iterate products in order
             for prod in item.get('products', []): # Top level products? No, in 'products' list of order (v2/posting/fbo/list)
@@ -743,7 +844,8 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
         "orders_count": orders_count,
         "sales_by_warehouse": sorted_warehouses,
         "sales_by_region": sorted_regions,
-        "sales_by_product": sorted_products
+        "sales_by_product": sorted_products,
+        "orders_metric": "placed_units"
     }
 
 
@@ -948,11 +1050,18 @@ def prepare():
         # Redemptions (Sales/Buyouts) Processing Per Period
         raw_sales = wb_data.get('raw_sales', [])
         
+        raw_sales_by_id = {
+            str(item.get('saleID') or item.get('saleId')): item
+            for item in raw_sales
+            if item.get('saleID') or item.get('saleId')
+        }
         for p in periods_config:
             p_key = p['key']
+            period_end = today - timedelta(days=p['days']) if p.get('exact_day') else today
+            period_start = period_end if p.get('exact_day') else today - timedelta(days=p['days'])
             filtered_redemptions = []
             
-            for item in raw_sales:
+            for item in raw_sales_by_id.values():
                 d_str = item.get('date') or item.get('dateFull')
                 dt = parse_date(d_str)
                 if not dt: continue
@@ -971,10 +1080,17 @@ def prepare():
             redemptions_revenue = sum(item.get('forPay', 0) or 0 for item in filtered_redemptions)
             redemptions_count = len(filtered_redemptions)
             
-            # Add to existing period data
+            # Add redemption totals and a warehouse/article consumption series.
+            # This powers coverage calculations; order placements remain separately
+            # available in sales_by_product for the order analytics screen.
             if p_key in dashboard["period_data"] and "wb" in dashboard["period_data"][p_key]:
-                dashboard["period_data"][p_key]["wb"]["redemptions_revenue"] = redemptions_revenue
-                dashboard["period_data"][p_key]["wb"]["redemptions_count"] = redemptions_count
+                wb_period = dashboard["period_data"][p_key]["wb"]
+                wb_period["redemptions_revenue"] = redemptions_revenue
+                wb_period["redemptions_count"] = redemptions_count
+                wb_period["consumption_by_product"] = aggregate_wb_realized_sales(
+                    raw_sales_by_id.values(), wb_own_names, period_start, period_end
+                )
+                wb_period["consumption_as_of"] = wb_data.get('fetch_time')
             
     # --- Process Ozon Data ---
     if ozon_data:

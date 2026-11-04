@@ -221,9 +221,9 @@ def fetch_wb_orders():
 
 
 def fetch_wb_sales():
-    """Fetch sales (redemptions) data for the last 30 days from Wildberries."""
+    """Fetch sales (redemptions) data with overlap for date-window calculations."""
     url = f"{STATS_BASE}/api/v1/supplier/sales"
-    params = {"dateFrom": (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')}
+    params = {"dateFrom": (datetime.now() - timedelta(days=40)).strftime('%Y-%m-%d')}
     headers = {"Authorization": WB_TOKEN}
     return fetch_with_retry(url, params, headers, "sales")
 
@@ -237,7 +237,15 @@ def fetch_wb_seller_warehouses():
     url = f"{MARKETPLACE_BASE}/api/v3/warehouses"
     headers = {"Authorization": WB_TOKEN}
     data = fetch_with_retry(url, None, headers, "seller-warehouses")
-    return data if isinstance(data, list) else []
+    if not isinstance(data, list):
+        return []
+    # The endpoint also lists DBS/DBW/pickup seller warehouses. This dashboard's
+    # WB own-stock lane is FBS only (deliveryType=1); avoid mixing models.
+    fbs_warehouses = [wh for wh in data if int(wh.get('deliveryType', 1) or 1) == 1]
+    excluded = len(data) - len(fbs_warehouses)
+    if excluded:
+        print(f"  seller warehouses: excluded {excluded} non-FBS delivery types")
+    return fbs_warehouses
 
 
 def fetch_wb_cards():

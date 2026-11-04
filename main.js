@@ -1342,11 +1342,8 @@ function updateStockMonitoring() {
     // Build monitoring data from stocks and period data
     monitoringData = buildMonitoringData();
 
-    // Filter out single-item warehouses with no sales (likely returns)
-    monitoringData = monitoringData.filter(item => {
-        // Keep if stock > 1 OR has 7d sales
-        return item.stock > 1 || item.orders7d > 0;
-    });
+    // Keep even one remaining unit; hide only empty rows with no recent demand.
+    monitoringData = monitoringData.filter(item => item.stock > 0 || item.orders7d > 0);
 
     // Filter by current marketplace (from tabs) and stock source
     let filtered = monitoringData.filter(item => item.mp === currentMarketplace);
@@ -1386,38 +1383,82 @@ function updateStockMonitoring() {
 function buildMonitoringData() {
     const result = [];
 
-    // Helper: get orders for specific product+warehouse combo
-    function getWarehouseOrders(productList, article, warehouseName) {
+    // Match exact normalized warehouse names and sum all matching rows.
+    // Do not use substring matching: names can overlap across FBW/FBS locations.
+    function normalizeWarehouseName(name) {
+        return String(name || '').normalize('NFKC').toLocaleLowerCase('ru-RU').replace(/ё/g, 'е')
+            .replace(/[^a-zа-я0-9]/g, '');
+    }
+
+    function getWarehouseOrders(productList, article, warehouseName, source, options = {}) {
         const product = productList.find(p => p.article === article);
         if (!product || !product.by_warehouse) return 0;
 
-        const normalizedWarehouse = warehouseName.toLowerCase().replace(/[_\s]/g, '');
-        const warehouseData = product.by_warehouse.find(w => {
-            const normalizedName = w.name.toLowerCase().replace(/[_\s]/g, '');
-            return normalizedName.includes(normalizedWarehouse) || normalizedWarehouse.includes(normalizedName);
-        });
-        return warehouseData ? warehouseData.count : 0;
+        const normalizedWarehouse = normalizeWarehouseName(warehouseName);
+        return product.by_warehouse.reduce((total, item) => {
+            const sourceMatches = !options.strictSource || item.source === source;
+            const nameSourceMatches = !options.nameSource || item.source === source;
+            return sourceMatches && nameSourceMatches && normalizeWarehouseName(item.name) === normalizedWarehouse
+                ? total + (Number(item.count) || 0)
+                : total;
+        }, 0);
     }
 
     // Push per-product-per-warehouse items for one chart dataset group
     function pushChartItems(chartData, periods, mp, source) {
-        const warehouses = chartData.labels || [];
+        const stockLabels = chartData.labels || [];
         const datasets = chartData.datasets || [];
-        const clusterName = source === 'fbs' ? 'Мои склады' : null;
+        const periodsForConsumption = periods.consumption || periods;
+        const warehouseSet = new Set(stockLabels);
+        const articles = new Map((datasets || []).map(dataset => [dataset.label, dataset]));
+        const consumptionByWarehouse = source === 'fbs' && periods.consumptionFbs
+            ? periods.consumptionFbs
+            : periodsForConsumption;
+        Object.values(consumptionByWarehouse).forEach(productList => {
+            (productList || []).forEach(product => {
+                if (!articles.has(product.article)) articles.set(product.article, null);
+                (product.by_warehouse || []).forEach(item => {
+                    if (!item.source || item.source === source) warehouseSet.add(item.name);
+                });
+            });
+        });
+        const usageRows = Object.values(consumptionByWarehouse).flatMap(rows => rows || []);
+        const salesWarehouseNames = new Set(usageRows.flatMap(product =>
+            (product.by_warehouse || []).filter(item => !item.source || item.source === source).map(item => item.name)
+        ));
+        const warehouses = Array.from(warehouseSet);
+        salesWarehouseNames.forEach(name => {
+            if (!warehouses.some(stockName => normalizeWarehouseName(stockName) === normalizeWarehouseName(name))) {
+                warehouses.push(name);
+            }
+        });
+        const stockIndexes = new Map(stockLabels.map((name, index) => [normalizeWarehouseName(name), index]));
+        const clusterName = source === 'fbs' ? 'Мои склады'
+            : (mp === 'wb' && source === 'fbw' ? 'Склад WB РФ · FBW (единый пул)' : null);
+        articles.forEach((dataset, article) => {
+            warehouses.forEach((warehouse) => {
+                const consumptionWarehouse = source === 'fbo' && mp === 'ozon' ? 'Склад кластера'
+                    : (source === 'fbs' && mp === 'ozon' ? warehouse : null);
+                const stockIndex = stockIndexes.get(normalizeWarehouseName(warehouse));
+                const qty = stockIndex === undefined ? 0 : (Number(dataset?.data?.[stockIndex]) || 0);
+                const useStrictSource = mp === 'wb';
+                const lookupOptions = {
+                    strictSource: useStrictSource,
+                    nameSource: mp === 'ozon' && source === 'fbs'
+                };
+                const consumptionKey = warehouse;
+                const consumptionFor = key => {
+                    const value = getWarehouseOrders(consumptionByWarehouse[key], article, consumptionKey, source, lookupOptions);
+                    return Number.isFinite(value) ? Math.max(0, value) : 0;
+                };
+                const ordersToday = consumptionFor('today');
+                const ordersYesterday = consumptionFor('yesterday');
+                const orders3d = consumptionFor('days_3');
+                const orders7d = consumptionFor('days_7');
+                const orders30d = consumptionFor('days_30');
+                const realizedSalesKnown = !useStrictSource || consumptionByWarehouse.days_7?.length > 0;
 
-        datasets.forEach(dataset => {
-            const article = dataset.label;
-            dataset.data.forEach((qty, idx) => {
-                if (qty <= 0) return;
-                const warehouse = warehouses[idx] || 'Unknown';
-
-                const ordersToday = getWarehouseOrders(periods.today, article, warehouse);
-                const ordersYesterday = getWarehouseOrders(periods.yesterday, article, warehouse);
-                const orders3d = getWarehouseOrders(periods.days_3, article, warehouse);
-                const orders7d = getWarehouseOrders(periods.days_7, article, warehouse);
-                const orders30d = getWarehouseOrders(periods.days_30, article, warehouse);
-
-                // Averages exclude today (today is incomplete)
+                // API windows include today; exclude it only from daily averages.
                 const orders3dNoToday = Math.max(0, orders3d - ordersToday);
                 const orders7dNoToday = Math.max(0, orders7d - ordersToday);
                 const orders30dNoToday = Math.max(0, orders30d - ordersToday);
@@ -1436,21 +1477,25 @@ function buildMonitoringData() {
                     deviation30d = Math.round((avg30d / avg7d) * 100);
                 }
 
-                const daysLeft = avg7d > 0 ? Math.round(qty / avg7d) : 999;
-                const status = getStockStatus(daysLeft);
+                const daysLeft = !realizedSalesKnown ? null : (avg7d > 0 ? Math.round(qty / avg7d) : 999);
+                const status = daysLeft === null ? { key: 'unknown', label: '⚪ Нет данных' } : getStockStatus(daysLeft);
 
                 result.push({
                     product: article,
-                    warehouse: warehouse,
+                    warehouse: consumptionWarehouse || warehouse,
                     mp: mp,
                     source: source,
-                    cluster: clusterName,
+                    cluster: source === 'fbw' && mp === 'wb' ? clusterName
+                        : (source === 'fbs' ? 'Мои склады'
+                            : (consumptionWarehouse ? warehouse : null)),
                     stock: qty,
                     ordersToday,
                     ordersYesterday,
                     orders3d,
                     orders7d,
                     orders30d,
+                    consumptionMetric: useStrictSource ? 'net_realized_sales' : 'orders',
+                    consumptionKnown: realizedSalesKnown,
                     avg7d: Math.round(avg7d * 10) / 10,
                     avg3d: Math.round(avg3d * 10) / 10,
                     avg30d: Math.round(avg30d * 10) / 10,
@@ -1464,19 +1509,154 @@ function buildMonitoringData() {
         });
     }
 
-    const periodsOf = (mp) => ({
-        today: dashboardData.period_data?.today?.[mp]?.sales_by_product || [],
-        yesterday: dashboardData.period_data?.yesterday?.[mp]?.sales_by_product || [],
-        days_3: dashboardData.period_data?.days_3?.[mp]?.sales_by_product || [],
-        days_7: dashboardData.period_data?.days_7?.[mp]?.sales_by_product || [],
-        days_30: dashboardData.period_data?.days_30?.[mp]?.sales_by_product || []
-    });
+    function aggregateOzonSalesByStockCluster(salesProducts, chartData) {
+        const stockClusters = chartData?.clusters || [];
+        const labels = chartData?.labels || [];
+        const clusterByWarehouse = new Map();
+        stockClusters.forEach(cluster => {
+            const start = Number(cluster.start_index) || 0;
+            const end = Number(cluster.end_index);
+            for (let i = start; i <= end && i < labels.length; i++) {
+                clusterByWarehouse.set(normalizeWarehouseName(labels[i]), cluster.name);
+            }
+        });
+        const products = new Map();
+        (salesProducts || []).forEach(product => {
+            const fboRows = (product.by_warehouse || []).filter(item => item.source !== 'fbs');
+            const byCluster = new Map();
+            fboRows.forEach(item => {
+                const clusterName = clusterByWarehouse.get(normalizeWarehouseName(item.name))
+                    || getWarehouseCluster(item.name, 'ozon');
+                const row = byCluster.get(clusterName) || { name: clusterName, count: 0, revenue: 0, source: 'fbo' };
+                row.count += Number(item.count) || 0;
+                byCluster.set(clusterName, row);
+            });
+            if (byCluster.size) {
+                const byWarehouse = new Map();
+                fboRows.forEach(item => {
+                    const clusterName = clusterByWarehouse.get(normalizeWarehouseName(item.name))
+                        || getWarehouseCluster(item.name, 'ozon');
+                    const row = byWarehouse.get(clusterName) || { name: clusterName, count: 0, revenue: 0, source: 'fbo' };
+                    row.count += Number(item.count) || 0;
+                    byWarehouse.set(clusterName, row);
+                });
+                const fboCount = Array.from(byWarehouse.values()).reduce((sum, row) => sum + row.count, 0);
+                const fbsRows = (product.by_warehouse || []).filter(item => item.source === 'fbs');
+                const fbsCount = fbsRows.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
+                products.set(product.article, {
+                    article: product.article,
+                    count: fboCount,
+                    by_warehouse: Array.from(byWarehouse.values())
+                });
+                if (fbsRows.length) {
+                    products.set(`${product.article}::fbs`, {
+                        article: product.article,
+                        count: fbsCount,
+                        by_warehouse: fbsRows.map(item => ({ ...item }))
+                    });
+                }
+            }
+        });
+        return Array.from(products.values());
+    }
 
-    // Marketplace warehouses (FBO / FBW)
-    pushChartItems(dashboardData.stocks?.wb?.chart_data || {}, periodsOf('wb'), 'wb', 'fbw');
-    pushChartItems(dashboardData.stocks?.ozon?.chart_data || {}, periodsOf('ozon'), 'ozon', 'fbo');
+    function aggregateOzonFbsSalesByWarehouse(salesProducts) {
+        const products = new Map();
+        (salesProducts || []).forEach(product => {
+            const byWarehouse = new Map();
+            (product.by_warehouse || []).forEach(item => {
+                if (item.source !== 'fbs') return;
+                const name = item.name || 'Склад продавца';
+                const row = byWarehouse.get(name) || { name, count: 0, revenue: 0, source: 'fbs' };
+                row.count += Number(item.count) || 0;
+                byWarehouse.set(name, row);
+            });
+            if (byWarehouse.size) {
+                products.set(product.article, {
+                    article: product.article,
+                    count: Array.from(byWarehouse.values()).reduce((sum, row) => sum + row.count, 0),
+                    by_warehouse: Array.from(byWarehouse.values())
+                });
+            }
+        });
+        return Array.from(products.values());
+    }
 
-    // Own warehouses (FBS)
+    function aggregateOzonStockClusters(chartData) {
+        const labels = chartData?.labels || [];
+        const clusters = chartData?.clusters || [];
+        const sourceDatasets = chartData?.datasets || [];
+        const grouped = clusters.map(cluster => {
+            const start = Number(cluster.start_index) || 0;
+            const end = Number(cluster.end_index);
+            const data = sourceDatasets.map(dataset => {
+                let total = 0;
+                for (let i = start; i <= end && i < labels.length; i++) total += Number(dataset.data?.[i]) || 0;
+                return total;
+            });
+            return { name: cluster.name, data, totalStock: data.reduce((sum, value) => sum + value, 0) };
+        });
+        return {
+            labels: grouped.map(cluster => cluster.name),
+            datasets: sourceDatasets.map((dataset, index) => ({
+                ...dataset,
+                data: grouped.map(cluster => cluster.data[index])
+            }))
+        };
+    }
+
+    const periodsOf = (mp) => {
+        const fboChart = dashboardData.stocks?.ozon?.chart_data || {};
+        const getUsage = (key, fbsOnly = false) => {
+            const period = dashboardData.period_data?.[key]?.[mp] || {};
+            const byProduct = period.sales_by_product || [];
+            if (mp === 'wb') return period.consumption_by_product || [];
+            if (fbsOnly) return aggregateOzonFbsSalesByWarehouse(byProduct);
+            return aggregateOzonSalesByStockCluster(byProduct, fboChart);
+        };
+        const consumption = {
+            today: getUsage('today'),
+            yesterday: getUsage('yesterday'),
+            days_3: getUsage('days_3'),
+            days_7: getUsage('days_7'),
+            days_30: getUsage('days_30')
+        };
+        return {
+            today: dashboardData.period_data?.today?.[mp]?.sales_by_product || [],
+            yesterday: dashboardData.period_data?.yesterday?.[mp]?.sales_by_product || [],
+            days_3: dashboardData.period_data?.days_3?.[mp]?.sales_by_product || [],
+            days_7: dashboardData.period_data?.days_7?.[mp]?.sales_by_product || [],
+            days_30: dashboardData.period_data?.days_30?.[mp]?.sales_by_product || [],
+            consumption,
+            consumptionFbs: mp === 'ozon' ? {
+                today: getUsage('today', true),
+                yesterday: getUsage('yesterday', true),
+                days_3: getUsage('days_3', true),
+                days_7: getUsage('days_7', true),
+                days_30: getUsage('days_30', true)
+            } : null
+        };
+    };
+
+    // Marketplace warehouses (FBO / FBW). WB demand is aggregate at "Склад WB РФ";
+    // the API does not support allocating that pooled demand to other FBW stock sites.
+    const wbFbwChart = dashboardData.stocks?.wb?.chart_data || {};
+    const wbFbwLabels = wbFbwChart.labels || [];
+    const wbFbwDatasets = wbFbwChart.datasets || [];
+    const wbFbwIndex = wbFbwLabels.findIndex(name => normalizeWarehouseName(name) === normalizeWarehouseName('Склад WB РФ'));
+    if (wbFbwIndex >= 0) {
+        const pooledChart = {
+            labels: ['Склад WB РФ'],
+            datasets: wbFbwDatasets.map(dataset => ({
+                ...dataset,
+                data: [dataset.data?.[wbFbwIndex] || 0]
+            }))
+        };
+        pushChartItems(pooledChart, periodsOf('wb'), 'wb', 'fbw');
+    }
+    pushChartItems(aggregateOzonStockClusters(dashboardData.stocks?.ozon?.chart_data || {}), periodsOf('ozon'), 'ozon', 'fbo');
+
+    // Own warehouses (FBS), each measured against its own seller-warehouse sales.
     pushChartItems(dashboardData.stocks?.wb?.chart_data_fbs || {}, periodsOf('wb'), 'wb', 'fbs');
     pushChartItems(dashboardData.stocks?.ozon?.chart_data_fbs || {}, periodsOf('ozon'), 'ozon', 'fbs');
 
@@ -1528,10 +1708,12 @@ function createSmartAlerts(allItems) {
         }
 
         clusterProductStock[cluster][product] += item.stock;
-        clusterProductDaysLeft[cluster][product] = Math.min(
-            clusterProductDaysLeft[cluster][product],
-            item.daysLeft
-        );
+        if (Number.isFinite(item.daysLeft)) {
+            clusterProductDaysLeft[cluster][product] = Math.min(
+                clusterProductDaysLeft[cluster][product],
+                item.daysLeft
+            );
+        }
     }
 
     // Find clusters where target products are running low (cluster-wide)
@@ -1868,6 +2050,10 @@ function getWarehouseCluster(warehouseName, mpType) {
         }
     }
 
+    if (mpType === 'wb' && normalizeWarehouseName(warehouseName) === normalizeWarehouseName('Склад WB РФ')) {
+        return 'Склад WB РФ · FBW (единый пул)';
+    }
+
     // Check if it's a sorting center (СЦ)
     if (name.includes('сц') || warehouseName.includes('СЦ')) {
         return 'Прочие';
@@ -1892,6 +2078,9 @@ function createMonitoringTableClustered(items) {
     items.forEach(item => {
         if (!item.cluster) {
             item.cluster = getWarehouseCluster(item.warehouse, item.mp);
+        }
+        if (item.source === 'fbw' && item.mp === 'wb') {
+            item.warehouse = 'Склад WB РФ';
         }
     });
 
@@ -1932,10 +2121,10 @@ function createMonitoringTableClustered(items) {
             clusters[item.cluster].productStock[item.product] += item.stock;
         }
 
-        if (item.daysLeft < clusters[item.cluster].minDaysLeft) {
+        if (Number.isFinite(item.daysLeft) && item.daysLeft < clusters[item.cluster].minDaysLeft) {
             clusters[item.cluster].minDaysLeft = item.daysLeft;
         }
-        if (item.daysLeft < clusters[item.cluster].warehouses[item.warehouse].minDaysLeft) {
+        if (Number.isFinite(item.daysLeft) && item.daysLeft < clusters[item.cluster].warehouses[item.warehouse].minDaysLeft) {
             clusters[item.cluster].warehouses[item.warehouse].minDaysLeft = item.daysLeft;
         }
 
@@ -1948,7 +2137,7 @@ function createMonitoringTableClustered(items) {
 
     // Sort clusters by worst status
     const sortedClusters = Object.values(clusters).sort((a, b) => {
-        const order = { critical: 0, warning: 1, normal: 2 };
+        const order = { critical: 0, warning: 1, unknown: 2, normal: 3 };
         return order[a.worstStatus] - order[b.worstStatus] || a.name.localeCompare(b.name);
     });
 
@@ -1972,7 +2161,7 @@ function createMonitoringTableClustered(items) {
                     <span class="cluster-summary">${Object.keys(cluster.warehouses).length} складов · ${cluster.totalStock} шт</span>
                     <span class="cluster-products">${productSummary}</span>
                     <span class="status-badge ${cluster.worstStatus}">
-                        ${cluster.worstStatus === 'critical' ? 'Критично' : cluster.worstStatus === 'warning' ? 'Внимание' : 'Норма'}
+                        ${cluster.worstStatus === 'critical' ? 'Критично' : cluster.worstStatus === 'warning' ? 'Внимание' : cluster.worstStatus === 'unknown' ? 'Нет данных' : 'Норма'}
                     </span>
                 </div>
             </td>
@@ -1995,7 +2184,7 @@ function createMonitoringTableClustered(items) {
 
             // Products
             wh.items.forEach(item => {
-                const progressWidth = Math.min(100, Math.max(5, (item.daysLeft / 30) * 100));
+                const progressWidth = item.daysLeft === null ? 0 : Math.min(100, Math.max(5, (item.daysLeft / 30) * 100));
 
                 // Format consumption value with deviation below
                 const formatConsumption = (avg, dev) => {
@@ -2019,7 +2208,7 @@ function createMonitoringTableClustered(items) {
                     <td>${item.ordersYesterday}</td>
                     <td>${item.orders3d}</td>
                     <td>${item.orders7d}</td>
-                    <td class="consumption-cell">
+                    <td class="consumption-cell" title="${item.consumptionKnown ? (item.consumptionMetric === 'net_realized_sales' ? `Выкупы минус возвраты; WB API данные на ${dashboardData.last_update || 'неизвестно'}` : 'Заказы/отправления') : 'Нет данных выкупов WB за последние 7 дней в текущей выгрузке'}">
                         <div class="consumption-display-new">
                             <div class="cons-column">
                                 ${formatConsumption(item.avg30d, item.deviation30d)}
@@ -2035,7 +2224,7 @@ function createMonitoringTableClustered(items) {
                     </td>
                     <td>
                         <div class="days-left-cell">
-                            <span>${item.daysLeft === 999 ? '∞' : item.daysLeft}</span>
+                            <span>${item.daysLeft === null ? '—' : (item.daysLeft === 999 ? '∞' : item.daysLeft)}</span>
                             <div class="days-progress">
                                 <div class="days-progress-bar ${item.statusKey}" style="width: ${progressWidth}%"></div>
                             </div>
