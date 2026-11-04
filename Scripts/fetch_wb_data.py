@@ -7,7 +7,7 @@ Handles WB API rate limits (HTTP 429) with retry + exponential backoff.
 import requests
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import json
 
@@ -16,9 +16,6 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 CREDENTIALS_PATH = os.path.join(PROJECT_DIR, 'Credentials.env')
 EXECUTIONS_DIR = os.path.join(PROJECT_DIR, 'Executions')
-
-# Ensure Executions directory exists
-os.makedirs(EXECUTIONS_DIR, exist_ok=True)
 
 load_dotenv(CREDENTIALS_PATH)
 WB_TOKEN = os.getenv('WB_API_TOKEN')
@@ -213,11 +210,69 @@ def fetch_wb_stocks_warehouse_remains():
 
 
 def fetch_wb_orders():
-    """Fetch orders data for the last 30 days from Wildberries."""
+    """Fetch statistics orders data for the last 30 days from Wildberries."""
     url = f"{STATS_BASE}/api/v1/supplier/orders"
     params = {"dateFrom": (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')}
     headers = {"Authorization": WB_TOKEN}
     return fetch_with_retry(url, params, headers, "orders")
+
+
+def fetch_wb_fbs_orders(days=29, page_size=1000, now=None):
+    """Fetch FBS assembly tasks by creation date, paging through the full window.
+
+    The Marketplace API returns tasks (one task is one product unit), with the
+    seller warehouse ID, seller article, task ID and createdAt. Do not filter
+    by current status: the dashboard metric records placed orders, not net sales.
+    """
+    url = f"{MARKETPLACE_BASE}/api/v3/orders"
+    headers = {"Authorization": WB_TOKEN}
+    now = now or datetime.now(timezone.utc)
+    first_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days)
+    date_from = int(first_day.timestamp())
+    date_to = int(now.timestamp())
+    cursor = 0
+    seen_cursors = set()
+    seen_ids = set()
+    all_orders = []
+
+    while cursor not in seen_cursors:
+        seen_cursors.add(cursor)
+        params = {
+            "dateFrom": date_from,
+            "dateTo": date_to,
+            "limit": page_size,
+            "next": cursor,
+        }
+        page = fetch_with_retry(url, params, headers, "fbs-orders")
+        if not isinstance(page, dict) or not isinstance(page.get("orders"), list):
+            print("  ERROR: invalid/failed FBS orders page; refusing partial result")
+            return None
+
+        orders = page["orders"]
+        added = 0
+        for order in orders:
+            order_id = order.get("id")
+            if order_id is None:
+                # Fail closed rather than silently dropping an unkeyed task.
+                print("  ERROR: FBS order row has no task id; refusing partial result")
+                return None
+            key = str(order_id)
+            if key not in seen_ids:
+                seen_ids.add(key)
+                all_orders.append(order)
+                added += 1
+
+        print(f"  FBS orders page: {len(orders)} rows, {added} unique (total {len(all_orders)})")
+        next_cursor = page.get("next")
+        if not orders or next_cursor is None:
+            break
+        next_cursor = int(next_cursor)
+        if next_cursor == cursor or next_cursor in seen_cursors:
+            print("  ERROR: repeated FBS orders pagination cursor; refusing partial result")
+            return None
+        cursor = next_cursor
+
+    return all_orders
 
 
 def fetch_wb_sales():
@@ -629,6 +684,18 @@ if __name__ == "__main__":
 
     print(f"  Flat stocks records: {len(stocks)}")
 
+    # FBS order placements come from Marketplace API, not from realized sales.
+    print("--- FBS assembly orders (last 30 days) ---")
+    fbs_orders = fetch_wb_fbs_orders(days=29)
+    if fbs_orders is None:
+        raise RuntimeError("Failed to retrieve complete WB FBS order history")
+
+    # Keep only required task data in the ignored raw execution file; drop buyer PII.
+    fbs_orders = [
+        {key: order.get(key) for key in ('id', 'createdAt', 'article', 'warehouseId', 'nmId')}
+        for order in fbs_orders
+    ]
+
     # Wait before next stats API call
     print(f"\n  Waiting {INTER_REQUEST_DELAY}s before orders request (stats API rate limit)...")
     time.sleep(INTER_REQUEST_DELAY)
@@ -645,6 +712,8 @@ if __name__ == "__main__":
     # --- Own warehouses (FBS) ---
     print("\n--- Seller warehouses (FBS) ---")
     fbs_stocks, seller_warehouses, seller_cards = fetch_wb_fbs_stocks(orders)
+    warehouse_names = {str(wh.get('id')): wh.get('name') or f"Склад {wh.get('id')}"
+                       for wh in seller_warehouses if wh.get('id') is not None}
 
     # Aggregate stocks by warehouse (marketplace / FBW)
     stocks_by_warehouse = aggregate_stocks_by_warehouse(stocks, source='fbw')
@@ -692,6 +761,7 @@ if __name__ == "__main__":
         "all_articles_fbs": all_articles_fbs,
         "total_stock_fbs": total_stock_fbs,
         "seller_warehouses": seller_warehouses,
+        "raw_fbs_orders": fbs_orders,
         "orders_by_warehouse": orders_by_warehouse,
         "orders_by_region": orders_by_region,
         "orders_by_product": orders_by_product,
@@ -702,6 +772,7 @@ if __name__ == "__main__":
         "raw_sales": sales
     }
 
+    os.makedirs(EXECUTIONS_DIR, exist_ok=True)
     output_path = os.path.join(EXECUTIONS_DIR, 'wb_raw_data.json')
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=4)

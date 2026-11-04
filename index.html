@@ -148,11 +148,11 @@
                         <tr>
                             <th>Товар</th>
                             <th onclick="sortMonitoringTable('stock')">Остаток ↕</th>
-                            <th>Расход сегодня</th>
-                            <th>Расход вчера</th>
-                            <th>Расход 3 дня</th>
-                            <th>Расход 7 дней</th>
-                            <th onclick="sortMonitoringTable('avg7d')">Средний расход/день: 30д | 7д | 3д</th>
+                            <th id="monitoringTodayHeader">Заказано сегодня</th>
+                            <th id="monitoringYesterdayHeader">Заказано вчера</th>
+                            <th id="monitoring3dHeader">Заказы 3 дня</th>
+                            <th id="monitoring7dHeader">Заказы 7 дней</th>
+                            <th id="monitoringAverageHeader" onclick="sortMonitoringTable('avg7d')">Среднее заказов/день: 30д | 7д | 3д</th>
                             <th onclick="sortMonitoringTable('daysLeft')">Дней осталось ↕</th>
                             <th>Статус</th>
                         </tr>

@@ -1337,6 +1337,21 @@ let monitoringSortAsc = true;
 function updateStockMonitoring() {
     if (!dashboardData) return;
 
+    const wbOwnMode = currentMarketplace === 'wb' && currentStockSource === 'own';
+    const headerLabels = wbOwnMode
+        ? { today: 'Заказано сегодня', yesterday: 'Заказано вчера', days3: 'Заказы 3 дня', days7: 'Заказы 7 дней', average: 'Среднее заказов/день: 30д | 7д | 3д' }
+        : { today: 'Расход сегодня', yesterday: 'Расход вчера', days3: 'Расход 3 дня', days7: 'Расход 7 дней', average: 'Средний расход/день: 30д | 7д | 3д' };
+    for (const [id, text] of Object.entries({
+        monitoringTodayHeader: headerLabels.today,
+        monitoringYesterdayHeader: headerLabels.yesterday,
+        monitoring3dHeader: headerLabels.days3,
+        monitoring7dHeader: headerLabels.days7,
+        monitoringAverageHeader: headerLabels.average
+    })) {
+        const header = document.getElementById(id);
+        if (header) header.textContent = text;
+    }
+
     const statusFilter = document.getElementById('monitoringStatusFilter')?.value || 'all';
 
     // Build monitoring data from stocks and period data
@@ -1411,9 +1426,12 @@ function buildMonitoringData() {
         const periodsForConsumption = periods.consumption || periods;
         const warehouseSet = new Set(stockLabels);
         const articles = new Map((datasets || []).map(dataset => [dataset.label, dataset]));
-        const consumptionByWarehouse = source === 'fbs' && periods.consumptionFbs
-            ? periods.consumptionFbs
-            : periodsForConsumption;
+        const hasSeparateWbFbsOrders = source === 'fbs' && mp === 'wb' && periods.ordersFbs;
+        const consumptionByWarehouse = hasSeparateWbFbsOrders
+            ? periods.ordersFbs
+            : (source === 'fbs' && periods.consumptionFbs
+                ? periods.consumptionFbs
+                : periodsForConsumption);
         Object.values(consumptionByWarehouse).forEach(productList => {
             (productList || []).forEach(product => {
                 if (!articles.has(product.article)) articles.set(product.article, null);
@@ -1456,16 +1474,28 @@ function buildMonitoringData() {
                 const orders3d = consumptionFor('days_3');
                 const orders7d = consumptionFor('days_7');
                 const orders30d = consumptionFor('days_30');
-                const realizedSalesKnown = !useStrictSource || consumptionByWarehouse.days_7?.length > 0;
+                const consumptionDataKnown = source === 'fbs' && mp === 'wb'
+                    ? (hasSeparateWbFbsOrders && periods.fbsOrdersAvailable && !periods.fbsOrdersArePartial)
+                    : (!useStrictSource || periods.hasRealizedConsumption || consumptionByWarehouse.days_7?.length > 0);
+                const consumptionMetric = mp === 'wb' && source === 'fbs' && hasSeparateWbFbsOrders ? 'placed_fbs_orders'
+                    : (mp !== 'wb' ? 'orders'
+                        : (periods.hasRealizedConsumption ? 'net_realized_sales' : 'orders_proxy'));
 
-                // API windows include today; exclude it only from daily averages.
-                const orders3dNoToday = Math.max(0, orders3d - ordersToday);
-                const orders7dNoToday = Math.max(0, orders7d - ordersToday);
-                const orders30dNoToday = Math.max(0, orders30d - ordersToday);
-
-                const avg3d = orders3dNoToday > 0 ? (orders3dNoToday / 2) : 0;
-                const avg7d = orders7dNoToday > 0 ? (orders7dNoToday / 6) : 0;
-                const avg30d = orders30dNoToday > 0 ? (orders30dNoToday / 29) : 0;
+                let avg3d;
+                let avg7d;
+                let avg30d;
+                if (mp === 'wb' && source === 'fbs') {
+                    // WB FBS periods count orders placed on every calendar day,
+                    // including today; divide by the full rolling window length.
+                    avg3d = orders3d / 3;
+                    avg7d = orders7d / 7;
+                    avg30d = orders30d / 30;
+                } else {
+                    // Preserve existing calculation for all other sources.
+                    avg3d = Math.max(0, orders3d - ordersToday) / 2;
+                    avg7d = Math.max(0, orders7d - ordersToday) / 6;
+                    avg30d = Math.max(0, orders30d - ordersToday) / 29;
+                }
 
                 let deviation3d = null;
                 if (avg7d > 0 && avg3d > 0) {
@@ -1477,7 +1507,7 @@ function buildMonitoringData() {
                     deviation30d = Math.round((avg30d / avg7d) * 100);
                 }
 
-                const daysLeft = !realizedSalesKnown ? null : (avg7d > 0 ? Math.round(qty / avg7d) : 999);
+                const daysLeft = !consumptionDataKnown ? null : (avg7d > 0 ? Math.round(qty / avg7d) : 999);
                 const status = daysLeft === null ? { key: 'unknown', label: '⚪ Нет данных' } : getStockStatus(daysLeft);
 
                 result.push({
@@ -1494,8 +1524,8 @@ function buildMonitoringData() {
                     orders3d,
                     orders7d,
                     orders30d,
-                    consumptionMetric: useStrictSource ? 'net_realized_sales' : 'orders',
-                    consumptionKnown: realizedSalesKnown,
+                    consumptionMetric,
+                    consumptionKnown: consumptionDataKnown,
                     avg7d: Math.round(avg7d * 10) / 10,
                     avg3d: Math.round(avg3d * 10) / 10,
                     avg30d: Math.round(avg30d * 10) / 10,
@@ -1610,7 +1640,7 @@ function buildMonitoringData() {
         const getUsage = (key, fbsOnly = false) => {
             const period = dashboardData.period_data?.[key]?.[mp] || {};
             const byProduct = period.sales_by_product || [];
-            if (mp === 'wb') return period.consumption_by_product || [];
+            if (mp === 'wb') return period.consumption_by_product || byProduct;
             if (fbsOnly) return aggregateOzonFbsSalesByWarehouse(byProduct);
             return aggregateOzonSalesByStockCluster(byProduct, fboChart);
         };
@@ -1621,6 +1651,17 @@ function buildMonitoringData() {
             days_7: getUsage('days_7'),
             days_30: getUsage('days_30')
         };
+        const ordersFbs = mp === 'wb' ? {
+            today: dashboardData.period_data?.today?.[mp]?.consumption_by_product_fbs || [],
+            yesterday: dashboardData.period_data?.yesterday?.[mp]?.consumption_by_product_fbs || [],
+            days_3: dashboardData.period_data?.days_3?.[mp]?.consumption_by_product_fbs || [],
+            days_7: dashboardData.period_data?.days_7?.[mp]?.consumption_by_product_fbs || [],
+            days_30: dashboardData.period_data?.days_30?.[mp]?.consumption_by_product_fbs || []
+        } : null;
+        const wbPeriodKeys = ['today', 'yesterday', 'days_3', 'days_7', 'days_30'];
+        const hasRealizedConsumption = mp === 'wb' && wbPeriodKeys.some(key =>
+            Array.isArray(dashboardData.period_data?.[key]?.[mp]?.consumption_by_product)
+        );
         return {
             today: dashboardData.period_data?.today?.[mp]?.sales_by_product || [],
             yesterday: dashboardData.period_data?.yesterday?.[mp]?.sales_by_product || [],
@@ -1628,6 +1669,15 @@ function buildMonitoringData() {
             days_7: dashboardData.period_data?.days_7?.[mp]?.sales_by_product || [],
             days_30: dashboardData.period_data?.days_30?.[mp]?.sales_by_product || [],
             consumption,
+            hasRealizedConsumption,
+            ordersFbs,
+            fbsOrdersAvailable: mp === 'wb' && ['today', 'days_3', 'days_7', 'days_30'].every(key =>
+                Array.isArray(dashboardData.period_data?.[key]?.[mp]?.consumption_by_product_fbs)
+            ),
+            fbsOrdersArePartial: mp === 'wb' && Boolean(dashboardData.period_data?.days_7?.[mp]?.consumption_by_product_fbs)
+                && !['today', 'yesterday', 'days_3', 'days_7', 'days_30'].every(key =>
+                    Array.isArray(dashboardData.period_data?.[key]?.[mp]?.consumption_by_product_fbs)
+                ),
             consumptionFbs: mp === 'ozon' ? {
                 today: getUsage('today', true),
                 yesterday: getUsage('yesterday', true),
@@ -2208,7 +2258,7 @@ function createMonitoringTableClustered(items) {
                     <td>${item.ordersYesterday}</td>
                     <td>${item.orders3d}</td>
                     <td>${item.orders7d}</td>
-                    <td class="consumption-cell" title="${item.consumptionKnown ? (item.consumptionMetric === 'net_realized_sales' ? `Выкупы минус возвраты; WB API данные на ${dashboardData.last_update || 'неизвестно'}` : 'Заказы/отправления') : 'Нет данных выкупов WB за последние 7 дней в текущей выгрузке'}">
+                    <td class="consumption-cell" title="${item.consumptionMetric === 'placed_fbs_orders' ? (item.consumptionKnown ? 'Заказы FBS по дате создания сборочного задания. Значение — число штук/заданий, не корзин; возможны пропуски отменённых заданий, статусную сохранность WB не гарантирует.' : 'API WB не подтверждает полноту истории заказов FBS; динамика показана как доступный верхний предел, дней остатков надёжно не рассчитать.') : (item.consumptionMetric === 'net_realized_sales' ? `Выкупы минус возвраты; WB API данные на ${dashboardData.last_update || 'неизвестно'}` : (item.consumptionMetric === 'orders_proxy' ? 'Временная оценка расхода по заказам; для фактических выкупов дождитесь обновления данных WB' : 'Заказы/отправления'))}" data-consumption-metric="${item.consumptionMetric}">
                         <div class="consumption-display-new">
                             <div class="cons-column">
                                 ${formatConsumption(item.avg30d, item.deviation30d)}

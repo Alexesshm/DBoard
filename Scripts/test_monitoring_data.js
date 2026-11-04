@@ -24,11 +24,16 @@ const testDashboardData = {
 };
 for (const key of ['today', 'yesterday', 'days_3', 'days_7', 'days_30']) {
     testDashboardData.period_data[key] = {
-        wb: { consumption_by_product: [{ article: 'A', by_warehouse: [
-            { name: 'Склад WB РФ', count: key === 'days_7' ? 12 : 0, source: 'fbw' },
-            { name: 'Москва', count: key === 'days_7' ? 4 : 0, source: 'fbs' },
-            { name: 'Fox КРД', count: key === 'days_7' ? 3 : 0, source: 'fbs' },
-        ] }] },
+        // Simulate the currently deployed older JSON shape without consumption_by_product.
+        wb: {
+            sales_by_product: [{ article: 'A', by_warehouse: [
+                { name: 'Склад WB РФ', count: key === 'days_7' ? 12 : 0, source: 'fbw' },
+            ] }],
+            ...(key === 'days_7' ? { consumption_by_product_fbs: [{
+                article: 'A', count: 14,
+                by_warehouse: [{ name: 'Москва', count: 14, source: 'fbs' }],
+            }] } : {}),
+        },
         ozon: { sales_by_product: [{ article: 'A', by_warehouse: [
             { name: 'Пушкино', count: 2, source: 'fbo' },
             { name: 'Хоругвино', count: 3, source: 'fbo' },
@@ -57,8 +62,17 @@ const get = (mp, source, cluster, warehouse) => rows.find(row =>
 );
 assert.equal(get('wb', 'fbw', 'Склад WB РФ · FBW (единый пул)', 'Склад WB РФ').stock, 100);
 assert.equal(get('wb', 'fbw', 'Склад WB РФ · FBW (единый пул)', 'Склад WB РФ').orders7d, 12);
-assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').orders7d, 4);
-assert.equal(get('wb', 'fbs', 'Мои склады', 'Fox КРД').orders7d, 3);
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').orders7d, 14);
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').orders3d, 0);
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').orders30d, 0);
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').avg7d, 2);
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').consumptionMetric, 'placed_fbs_orders');
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').consumptionKnown, false);
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').daysLeft, null);
+assert.equal(rows.find(row => row.mp === 'wb' && row.source === 'fbw').orders7d, 12);
+assert.equal(rows.find(row => row.mp === 'wb' && row.source === 'fbw').consumptionMetric, 'orders_proxy');
+assert.equal(rows.find(row => row.mp === 'wb' && row.source === 'fbw').consumptionKnown, true);
+assert.equal(get('wb', 'fbs', 'Мои склады', 'Москва').consumptionKnown, false);
 assert.equal(get('ozon', 'fbo', 'Москва, МО и Дальние регионы', 'Склад кластера').stock, 30);
 assert.equal(get('ozon', 'fbo', 'Санкт-Петербург и СЗО', 'Склад кластера').stock, 30);
 assert.equal(get('ozon', 'fbo', 'Москва, МО и Дальние регионы', 'Склад кластера').orders7d, 5);

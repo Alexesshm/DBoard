@@ -94,6 +94,9 @@ dashboard_data.json
 - Список своих складов: `GET https://marketplace-api.wildberries.ru/api/v3/warehouses`
 - Остатки по складу: `POST https://marketplace-api.wildberries.ru/api/v3/stocks/{warehouseId}` (тело: `chrtIds`)
 - Сопоставление `chrtID → артикул`: `POST https://content-api.wildberries.ru/content/v2/get/cards/list`
+- Заказы FBS для мониторинга: `GET https://marketplace-api.wildberries.ru/api/v3/orders` (период по `createdAt`, максимум 30 календарных дней, пагинация `next`)
+
+Мониторинг WB FBS считает сборочные задания (1 задание WB = 1 единица товара), а не выкупы. Счётчики за 3/7/30 дней рассчитываются заново по последним 30 дням ответа API без локального журнала; повторные страницы дедуплицируются по `id`. Спецификация WB не гарантирует, что отменённые/отклонённые задания сохраняются в историческом ответе, поэтому эти счётчики могут быть неполными после изменения статуса; интерфейс отмечает доступность данных.
 
 ### Ozon — склады маркетплейса (FBO)
 - Остатки по складам: `POST https://api-seller.ozon.ru/v2/analytics/stock_on_warehouses`

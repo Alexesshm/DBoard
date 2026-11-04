@@ -472,6 +472,70 @@ def tag_all_sources(agg, source):
     return agg
 
 
+def aggregate_wb_fbs_order_placements(orders, seller_warehouses, period_start=None, period_end=None):
+    """Aggregate gross FBS assembly-task placements by article and seller warehouse.
+
+    Every task counts once regardless of current/later status. The API's task id
+    is used for deduplication; ``createdAt`` defines rolling window membership.
+    """
+    warehouse_names = {
+        str(warehouse_id): str(name)
+        for warehouse_id, name in (seller_warehouses or {}).items()
+    } if isinstance(seller_warehouses, dict) else {
+        str(wh.get('id')): (wh.get('name') or f"Склад {wh.get('id')}")
+        for wh in (seller_warehouses or []) if wh.get('id') is not None
+    }
+    unique = {}
+    for order in orders or []:
+        order_id = order.get('id')
+        article = order.get('article') or 'Unknown'
+        warehouse_id = order.get('warehouseId')
+        dt = parse_date(order.get('createdAt'))
+        if order_id is None or warehouse_id is None or dt is None:
+            continue
+        if period_start and dt.date() < period_start:
+            continue
+        if period_end and dt.date() > period_end:
+            continue
+        unique[str(order_id)] = (str(article), str(warehouse_id), dt)
+
+    products = {}
+    for article, warehouse_id, _created_at in unique.values():
+        warehouse = warehouse_names.get(warehouse_id, f"Склад {warehouse_id}")
+        product = products.setdefault(article, {
+            'article': article, 'count': 0, 'revenue': 0, 'by_warehouse': {},
+        })
+        product['count'] += 1
+        row = product['by_warehouse'].setdefault(warehouse, {
+            'name': warehouse, 'count': 0, 'revenue': 0, 'source': 'fbs',
+        })
+        row['count'] += 1
+
+    result = sorted(products.values(), key=lambda item: item['count'], reverse=True)
+    for product in result:
+        product['by_warehouse'] = sorted(
+            product['by_warehouse'].values(), key=lambda item: item['count'], reverse=True
+        )
+    return result
+
+
+def aggregate_wb_orders_by_warehouse(products):
+    """Aggregate FBS placed-task counts per seller warehouse."""
+    warehouses = {}
+    for product in products or []:
+        for row in product.get('by_warehouse', []):
+            name = row.get('name') or 'Склад продавца'
+            target = warehouses.setdefault(name, {
+                'name': name, 'count': 0, 'revenue': 0, 'by_product': [], 'source': 'fbs',
+            })
+            count = int(row.get('count', 0) or 0)
+            target['count'] += count
+            target['by_product'].append({
+                'article': product.get('article', 'Unknown'), 'count': count, 'revenue': 0,
+            })
+    return sorted(warehouses.values(), key=lambda item: item['count'], reverse=True)
+
+
 def aggregate_wb_realized_sales(sales_list, own_warehouse_names, period_start=None, period_end=None):
     """Build net realized sold units by article and source from WB sales rows."""
     known = warehouse_source_lookup(own_warehouse_names, 'fbw')
@@ -844,8 +908,7 @@ def aggregate_sales_data(sales_list, mp_type='wb'):
         "orders_count": orders_count,
         "sales_by_warehouse": sorted_warehouses,
         "sales_by_region": sorted_regions,
-        "sales_by_product": sorted_products,
-        "orders_metric": "placed_units"
+        "sales_by_product": sorted_products
     }
 
 
@@ -1020,7 +1083,9 @@ def prepare():
 
         # Sales (Orders) Processing Per Period
         raw_orders = wb_data.get('raw_orders', [])
-        wb_own_names = [w.get('name') for w in wb_data.get('seller_warehouses', []) if w.get('name')]
+        raw_fbs_orders = wb_data.get('raw_fbs_orders', [])
+        seller_warehouses = wb_data.get('seller_warehouses', [])
+        wb_own_names = [w.get('name') for w in seller_warehouses if w.get('name')]
         
         for p in periods_config:
             p_key = p['key']
@@ -1046,6 +1111,24 @@ def prepare():
             tag_sales_sources(agg, wb_own_names, main_source='fbw')
             if p_key not in dashboard["period_data"]: dashboard["period_data"][p_key] = {}
             dashboard["period_data"][p_key]["wb"] = agg
+
+            # Gross placed FBS assembly tasks from Marketplace API. This is a
+            # separate metric: do not decrement on cancellation/return and do
+            # not mix it with sale/redemption accounting.
+            period_end = today - timedelta(days=p['days']) if p.get('exact_day') else today
+            period_start = period_end if p.get('exact_day') else today - timedelta(days=p['days'])
+            fbs_placements = aggregate_wb_fbs_order_placements(
+                raw_fbs_orders, seller_warehouses, period_start, period_end
+            )
+            dashboard["period_data"][p_key]["wb"]["orders_by_product_fbs"] = fbs_placements
+            dashboard["period_data"][p_key]["wb"]["orders_by_warehouse_fbs"] = aggregate_wb_orders_by_warehouse(
+                fbs_placements
+            )
+            dashboard["period_data"][p_key]["wb"]["fbs_placed_orders_count"] = sum(
+                int(product.get('count', 0) or 0) for product in fbs_placements
+            )
+            dashboard["period_data"][p_key]["wb"]["fbs_orders_metric"] = 'placed_assembly_tasks'
+            dashboard["period_data"][p_key]["wb"]["consumption_by_product_fbs"] = fbs_placements
         
         # Redemptions (Sales/Buyouts) Processing Per Period
         raw_sales = wb_data.get('raw_sales', [])
